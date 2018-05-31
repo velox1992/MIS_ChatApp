@@ -8,7 +8,9 @@ import java.io.ByteArrayInputStream
 import java.io.ObjectInputStream
 import java.io.Serializable
 
-
+/**
+ * Funktionen zur Bestimmung eines Hash-Wertes auf Objekt-Listen
+ */
 class HashingFunctions {
 
     companion object {
@@ -50,6 +52,14 @@ class HashingFunctions {
 
             val mdbytes = md.digest()
             return mdbytes
+        }
+
+
+        /**
+         * ein Byte-Array in einen Hex-String formatieren
+         */
+        fun byteArrayToHexString(byteArray: ByteArray) : String{
+            return JavaHelper.getHex(byteArray)
         }
     }
 }
