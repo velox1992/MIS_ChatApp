@@ -14,7 +14,7 @@ import java.io.Serializable
 class HashingFunctions {
 
     companion object {
-
+        /*
         /**
          * Serialisieren eines Objektes in ein Byte-Array
          */
@@ -52,8 +52,27 @@ class HashingFunctions {
 
             val mdbytes = md.digest()
             return mdbytes
-        }
+        }*/
 
+
+
+        /**
+         * Bildet über eine ArrayList von serialisierbaren Objekten einen Hash
+         */
+        fun <T> getMD5Hash(list : List<T>) : ByteArray
+        {
+            var md = MessageDigest.getInstance("MD5")
+
+            for(item : T in list)
+            {
+                if(item != null) {
+                    md.update(item.hashCode().toByte())
+                }
+            }
+
+            val mdbytes = md.digest()
+            return mdbytes
+        }
 
         /**
          * ein Byte-Array in einen Hex-String formatieren

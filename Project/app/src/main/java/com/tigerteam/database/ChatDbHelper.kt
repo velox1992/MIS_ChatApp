@@ -52,7 +52,7 @@ class ChatDbHelper(context: Context)
 
         val createMessagesStatement = "CREATE TABLE ${MESSAGES_T} (" +
                 "${MESSAGES_C_ID} TEXT PRIMARY KEY, " +
-                "${MESSAGES_C_SENDTIMESTAMP} DATETIME, " +
+                "${MESSAGES_C_SENDTIMESTAMP} LONG, " +
                 "${MESSAGES_C_DATATYPE} TEXT, " +
                 "${MESSAGES_C_DATA} TEXT, " +
                 "${MESSAGES_C_SENDERID} TEXT, " +
@@ -61,7 +61,7 @@ class ChatDbHelper(context: Context)
 
         val createHashesStatement = "CREATE TABLE ${HASHES_T} (" +
                 "${HASHES_C_KEY} TEXT, " +
-                "${HASHES_C_FROMTIME} DATETIME, " +
+                "${HASHES_C_FROMTIME} LONG, " +
                 "${HASHES_C_VALUE} TEXT, " +
                 "PRIMARY KEY (${HASHES_C_KEY}, ${HASHES_C_FROMTIME})" +
                 ")"
@@ -282,7 +282,7 @@ class ChatDbHelper(context: Context)
     override fun getAllUsers(): List<User> {
         val ret = mutableListOf<User>()
 
-        val query = "SELECT * FROM $USERS_T"
+        val query = "SELECT * FROM $USERS_T ORDER BY $USERS_C_ID"
 
         val db = this.writableDatabase
         val cursor =  db.rawQuery(query, null)
@@ -345,12 +345,39 @@ class ChatDbHelper(context: Context)
 
     /// Chat
 
+    /**
+     * Aus Cursor Werte auslesen und ein User-Objekt zurückliefern.
+     */
+    private fun cursorToChat(cursor: Cursor) : Chat {
+        val id = cursor.getString(0)
+        val name = cursor.getString(1)
+
+        var chat = Chat(id, name)
+        return chat
+    }
+
 
     /**
-     * Auslesen aller Chats.
+     * Auslesen aller Chat-Objekte.
      */
     override fun getAllChats(): List<Chat> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val ret = mutableListOf<Chat>()
+
+        val query = "SELECT * FROM $CHATS_T ORDER BY $CHATS_C_ID"
+
+        val db = this.writableDatabase
+        val cursor =  db.rawQuery(query, null)
+        if(cursor.moveToFirst())
+        {
+            do {
+                val chat = cursorToChat(cursor)
+                ret.add(chat)
+            }
+            while (cursor.moveToNext())
+            cursor.close()
+        }
+        db.close()
+        return ret
     }
 
 
@@ -358,7 +385,21 @@ class ChatDbHelper(context: Context)
      * Upsert (Update, sonst Insert) eines User-Objektes.
      */
     override fun upsertChat(chat: Chat) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+
+        val db = this.writableDatabase
+
+        val values = ContentValues()
+        values.put(CHATS_C_ID, chat.id)
+        values.put(CHATS_C_NAME, chat.name)
+
+        // erst versuch Update, wenn nichts betroffen, dann insert
+        val affectedRows = db.update(CHATS_T, values, CHATS_C_ID + " = ?", arrayOf(chat.id ))
+
+        if(affectedRows == 0) {
+            // nun Insert notwendig
+            db.insert(CHATS_T, null, values)
+        }
+        db.close()
     }
 
     /// END Chat
@@ -367,19 +408,63 @@ class ChatDbHelper(context: Context)
 
     /// ChatUsers
 
+
+    /**
+     * Aus Cursor Werte auslesen und ein ChatUser-Objekt zurückliefern.
+     */
+    private fun cursorToChatUser(cursor: Cursor) : ChatUser {
+        val chatId = cursor.getString(0)
+        val userId = cursor.getString(1)
+        val isOwner = cursor.getInt(2) > 0
+
+        var chatUser = ChatUser(chatId, userId, isOwner)
+        return chatUser
+    }
+
+
     /**
      * Auslesen aller ChatUSer-Einträge.
      */
     override fun getAllChatUsers(): List<ChatUser> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val ret = mutableListOf<ChatUser>()
+
+        val query = "SELECT * FROM $CHAT_USERS_T ORDER BY $CHAT_USERS_C_CHATID, $CHAT_USERS_C_USERID"
+
+        val db = this.writableDatabase
+        val cursor =  db.rawQuery(query, null)
+        if(cursor.moveToFirst())
+        {
+            do {
+                val chatUser = cursorToChatUser(cursor)
+                ret.add(chatUser)
+            }
+            while (cursor.moveToNext())
+            cursor.close()
+        }
+        db.close()
+        return ret
     }
 
 
     /**
      * Upsert (Update, sonst Insert) eines chatUser-Objektes.
      */
-    override fun upsertChatUSer(chatUser: ChatUser) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun upsertChatUser(chatUser: ChatUser) {
+        val db = this.writableDatabase
+
+        val values = ContentValues()
+        values.put(CHAT_USERS_C_CHATID, chatUser.chatId)
+        values.put(CHAT_USERS_C_USERID, chatUser.userId)
+        values.put(CHAT_USERS_C_ISOWNER, chatUser.isOwner)
+
+        // erst versuch Update, wenn nichts betroffen, dann insert
+        val affectedRows = db.update(CHAT_USERS_T, values, CHAT_USERS_C_CHATID + " = ? AND " + CHAT_USERS_C_USERID + " = ?" , arrayOf(chatUser.chatId, chatUser.userId ))
+
+        if(affectedRows == 0) {
+            // nun Insert notwendig
+            db.insert(CHAT_USERS_T, null, values)
+        }
+        db.close()
     }
 
     /// END ChatUsers
@@ -387,27 +472,105 @@ class ChatDbHelper(context: Context)
 
     /// Messages
 
+    /**
+     * Aus Cursor Werte auslesen und ein Message-Objekt zurückliefern.
+     */
+    private fun cursorToMessage(cursor: Cursor): ChatMessage  {
+        val id = cursor.getString(0)
+        val timeInMilliseconds =  cursor.getLong(1)
+        val dataType = cursor.getString(2)
+        val data = cursor.getString(3)
+        val senderId = cursor.getString(4)
+        val chatId = cursor.getString(5)
+
+        var msg = ChatMessage(id, Date(timeInMilliseconds) ,dataType, data, senderId, chatId)
+        return msg
+    }
+
 
     /**
      * Auslesen aller Messages.
      */
-    override fun getAllMessages(): List<Message> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun getAllMessages(): List<ChatMessage> {
+        val ret = mutableListOf<ChatMessage>()
+
+        val query = "SELECT * FROM $MESSAGES_T ORDER BY $MESSAGES_C_ID"
+
+        val db = this.writableDatabase
+        val cursor =  db.rawQuery(query, null)
+        if(cursor.moveToFirst())
+        {
+            do {
+                val msg = cursorToMessage(cursor)
+                ret.add(msg)
+            }
+            while (cursor.moveToNext())
+            cursor.close()
+        }
+        db.close()
+        return ret
     }
 
     /**
      * Liefert alle Nachrichten für einen bestimmten Zeitraum
      */
-    override fun getMessagesBetween(start: Date, end : Date) : List<Message>{
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun getMessagesBetween(start: Date, end : Date) : List<ChatMessage>{
+        val ret = mutableListOf<ChatMessage>()
+
+        val query = "SELECT * FROM $MESSAGES_T WHERE $MESSAGES_C_SENDTIMESTAMP BETWEEN ? AND ? ORDER BY $MESSAGES_C_ID"
+
+        val db = this.writableDatabase
+        val cursor =  db.rawQuery(query, arrayOf(start.time.toString(), end.time.toString()))
+        if(cursor.moveToFirst())
+        {
+            do {
+                val msg = cursorToMessage(cursor)
+                ret.add(msg)
+            }
+            while (cursor.moveToNext())
+            cursor.close()
+        }
+        db.close()
+        return ret
+    }
+
+    /**
+     * Liefert alle Nachrichten für einen bestimmten Zeitraum nach Zeit sortiert. (Neuste zuletzt in Liste)
+     */
+    override fun getMessagesBetweenOrderedByTime(start: Date, end: Date): List<ChatMessage> {
+        var ret = listOf<ChatMessage>()
+        val unOrdered = getMessagesBetween(start, end)
+
+        if(unOrdered.count() > 0) {
+            ret = unOrdered.sortedBy { x -> x.timeStamp.time }
+        }
+
+        return ret
     }
 
 
     /**
      * Upsert (Update, sonst Insert) eines Message-Objektes.
      */
-    override fun upsertMessage(message: Message) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun upsertMessage(msg: ChatMessage) {
+        val db = this.writableDatabase
+
+        val values = ContentValues()
+        values.put(MESSAGES_C_ID, msg.id)
+        values.put(MESSAGES_C_SENDTIMESTAMP, msg.timeStamp.time)
+        values.put(MESSAGES_C_DATATYPE, msg.dataType)
+        values.put(MESSAGES_C_DATA, msg.data)
+        values.put(MESSAGES_C_SENDERID, msg.senderId)
+        values.put(MESSAGES_C_CHATID, msg.chatId)
+
+        // erst versuch Update, wenn nichts betroffen, dann insert
+        val affectedRows = db.update(MESSAGES_T, values, MESSAGES_C_ID + " = ?", arrayOf(msg.id ))
+
+        if(affectedRows == 0) {
+            // nun Insert notwendig
+            db.insert(MESSAGES_T, null, values)
+        }
+        db.close()
     }
 
     /// END Messages
@@ -425,6 +588,7 @@ class ChatDbHelper(context: Context)
 
 
     /// Hash
+    /// Zeistempel als Millisekunden (siehe Date)
 
     /**
      * Aus Cursor Werte auslesen und ein Hash-Objekt zurückliefern.
@@ -439,41 +603,41 @@ class ChatDbHelper(context: Context)
     }
 
 
-    // TODO: Wieder entfernen
-    fun Test() {
-        var h = Hash("T1", Date(1527776078417), "1")
+    /**
+     * Upsert (Update, sonst Insert) eines Hash-Objektes.
+     */
+    private fun UpsertHash(hash : Hash) {
         val db = this.writableDatabase
 
         val values = ContentValues()
-        values.put(HASHES_C_KEY, h.key)
-        values.put(HASHES_C_FROMTIME, h.fromTime.time)
-        values.put(HASHES_C_VALUE, h.value)
+        values.put(HASHES_C_KEY, hash.key)
+        values.put(HASHES_C_FROMTIME, hash.fromTime.time)
+        values.put(HASHES_C_VALUE, hash.value)
 
         // erst versuch Update, wenn nichts betroffen, dann insert
-        val affectedRows = db.update(HASHES_T, values, HASHES_C_KEY + " = ? AND " + HASHES_C_FROMTIME +" = ?", arrayOf(h.key, h.fromTime.time.toString() ))
+        val affectedRows = db.update(HASHES_T, values, HASHES_C_KEY + " = ? AND "+ HASHES_C_FROMTIME + " = ?", arrayOf(hash.key, hash.fromTime.time.toString()))
 
         if(affectedRows == 0) {
             // nun Insert notwendig
-            var a = db.insert(HASHES_T, null, values)
+            db.insert(HASHES_T, null, values)
         }
         db.close()
-
-        //getHashesForKey(h.key)
-
     }
 
 
+    /**
+     * Einträge in der Hash-Tabelle für einen Key lesen.
+     */
     private fun getHashesForKey(key : String): List<Hash> {
         val ret = mutableListOf<Hash>()
 
-        val query = "SELECT * FROM $HASHES_T WHERE $HASHES_C_KEY = \"$key\""
+        val query = "SELECT * FROM $HASHES_T WHERE $HASHES_C_KEY = \"$key\" ORDER BY $HASHES_C_FROMTIME"
 
         val db = this.writableDatabase
         val cursor =  db.rawQuery(query, null)
         if(cursor.moveToFirst())
         {
             do {
-
                 val hash = cursorToHash(cursor)
                 ret.add(hash)
             }
@@ -484,7 +648,9 @@ class ChatDbHelper(context: Context)
         return ret
     }
 
-
+    /**
+     * Alle Hashes für die Tabellen neu berechnen
+     */
     override fun recalculateAllHashes() {
         recalculateChatHash()
         recalculateChatHash()
@@ -492,38 +658,118 @@ class ChatDbHelper(context: Context)
         recalculateMessageHash()
     }
 
+    /**
+     * Hash für die User-Tabelle aktualisieren
+     */
     override fun recalculateUserHash() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val allUsers = getAllUsers()
+
+        //Hash berechnen
+        val hashValue = HashingFunctions.byteArrayToHexString(HashingFunctions.getMD5Hash(allUsers));
+
+        val hash = Hash(USERS_T, Date(0), hashValue)
+        UpsertHash(hash)
     }
 
+    /**
+     * Hash für die Chat-Tabelle aktualisieren
+     */
     override fun recalculateChatHash() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val allChats = getAllChats()
+
+        //Hash berechnen
+        val hashValue = HashingFunctions.byteArrayToHexString(HashingFunctions.getMD5Hash(allChats));
+
+        val hash = Hash(CHATS_T, Date(0), hashValue)
+        UpsertHash(hash)
     }
 
+    /**
+     * Hash für die ChatUsers-Tabelle aktualisieren
+     */
     override fun recalculateChatUsersHash() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val allChatUsers = getAllChatUsers()
+
+        //Hash berechnen
+        val hashValue = HashingFunctions.byteArrayToHexString(HashingFunctions.getMD5Hash(allChatUsers));
+
+        val hash = Hash(CHAT_USERS_T, Date(0), hashValue)
+        UpsertHash(hash)
     }
 
+    /**
+     * Hash für die Message-Tabelle aktualisieren
+     */
     override fun recalculateMessageHash() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val allMessages = getAllMessages()
+
+        val groupedByHour = allMessages.groupBy { (it.timeStamp.time /(1000 * 60*60)) * (1000 * 60*60)} // auf Stunden gehen
+
+        for(group in groupedByHour) {
+            //Hash berechnen
+            val hashValue = HashingFunctions.byteArrayToHexString(HashingFunctions.getMD5Hash(group.value));
+
+            val hash = Hash(MESSAGES_T, Date(group.key), hashValue)
+            UpsertHash(hash)
+        }
     }
 
 
 
-    override fun getUserHash() : String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    /**
+     * User-Hash lesen
+     */
+    override fun getUserHash() : String? {
+        var ret : String? = null
+
+        val hashes = getHashesForKey(USERS_T)
+        if(hashes.count() > 0)
+        {
+            ret = hashes[0].value
+        }
+        return ret
     }
 
-    override fun getChatHash() : String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    /**
+     * Chat-Hash lesen
+     */
+    override fun getChatHash() : String? {
+        var ret : String? = null
+
+        val hashes = getHashesForKey(CHATS_T)
+        if(hashes.count() > 0)
+        {
+            ret = hashes[0].value
+        }
+        return ret
     }
 
-    override fun getChatUsersHash() : String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    /**
+     * ChatUsers-Hash lesen
+     */
+    override fun getChatUsersHash() : String? {
+        var ret : String? = null
+
+        val hashes = getHashesForKey(CHAT_USERS_T)
+        if(hashes.count() > 0)
+        {
+            ret = hashes[0].value
+        }
+        return ret
     }
 
-    override fun getMessageHash() : String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    /**
+     * Message-Hash lesen
+     */
+    override fun getMessageHashes() : HashMap<Date, String> {
+        var ret = HashMap<Date, String>()
+
+        val hashes = getHashesForKey(MESSAGES_T)
+        for(h : Hash in hashes)
+        {
+            ret.put(h.fromTime, h.value)
+        }
+        return ret
     }
 
 

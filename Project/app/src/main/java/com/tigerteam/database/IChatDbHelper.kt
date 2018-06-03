@@ -2,6 +2,7 @@ package com.tigerteam.database
 
 import com.tigerteam.database.DbObjects.*
 import java.util.*
+import kotlin.collections.HashMap
 
 /**
  * Zugriffsfunktionen auf die Chat-Datenbank
@@ -72,7 +73,7 @@ interface IChatDbHelper {
     /**
      * Upsert (Update, sonst Insert) eines chatUser-Objektes.
      */
-    fun upsertChatUSer(chatUser: ChatUser)
+    fun upsertChatUser(chatUser: ChatUser)
 
 
 
@@ -81,18 +82,23 @@ interface IChatDbHelper {
     /**
      * Auslesen aller Messages.
      */
-    fun getAllMessages() : List<Message>
+    fun getAllMessages() : List<ChatMessage>
 
 
     /**
-     * Liefert alle Nachrichten für einen bestimmten Zeitraum
+     * Liefert alle Nachrichten für einen bestimmten Zeitraum (NICHT nach Zeit sortiert)
      */
-    fun getMessagesBetween(start: Date, end : Date) : List<Message>
+    fun getMessagesBetween(start: Date, end : Date) : List<ChatMessage>
+
+    /**
+     * Liefert alle Nachrichten für einen bestimmten Zeitraum nach Zeit sortiert. (Neuste zuletzt in Liste)
+     */
+    fun getMessagesBetweenOrderedByTime(start: Date, end : Date) : List<ChatMessage>
 
     /**
      * Upsert (Update, sonst Insert) eines Message-Objektes.
      */
-    fun upsertMessage(message: Message)
+    fun upsertMessage(message: ChatMessage)
 
 
 
@@ -102,21 +108,54 @@ interface IChatDbHelper {
 
 
     // Hash-Functions
+
+    /**
+     * Alle Hashes für die Tabellen neu berechnen
+     */
     fun recalculateAllHashes()
+
+    /**
+     * Hash für die User-Tabelle aktualisieren
+     */
     fun recalculateUserHash()
+    /**
+     * Hash für die Chat-Tabelle aktualisieren
+     */
     fun recalculateChatHash()
+    /**
+     * Hash für die ChatUsers-Tabelle aktualisieren
+     */
     fun recalculateChatUsersHash()
+    /**
+     * Hash für die Message-Tabelle aktualisieren
+     */
     fun recalculateMessageHash()
 
-    fun getUserHash() : String
-    fun getChatHash() : String
-    fun getChatUsersHash() : String
-    fun getMessageHash() : String
+
+    /**
+     * User-Hash lesen
+     */
+    fun getUserHash() : String?
+
+    /**
+     * Chat-Hash lesen
+     */
+    fun getChatHash() : String?
+
+    /**
+     * ChatUser-Hash lesen
+     */
+    fun getChatUsersHash() : String?
+
+    /**
+     * Message-Hash lesen
+     */
+    fun getMessageHashes() : HashMap<Date, String>
 
 
 
 
-    // High-Level Chat-Funktionen.
+    // High-Level Chat-Funktionen für die Visualisierung.
     // Lesend mit Joins
 
 

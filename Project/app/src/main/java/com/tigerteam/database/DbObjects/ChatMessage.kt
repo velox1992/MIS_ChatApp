@@ -1,9 +1,9 @@
 package com.tigerteam.database.DbObjects
 
-import java.time.LocalDateTime
+import java.util.*
 
-data class Message(val id : String,
-                   var timeStamp : LocalDateTime,
+data class ChatMessage(val id : String,
+                   var timeStamp : Date,
                    var dataType : String,
                    var data : String,
                    var senderId : String,
