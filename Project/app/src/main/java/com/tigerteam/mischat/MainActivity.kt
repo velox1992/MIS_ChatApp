@@ -13,6 +13,9 @@ import android.util.Log
 import android.widget.Adapter
 import android.widget.ArrayAdapter
 import kotlinx.android.synthetic.main.activity_main.*
+import android.net.wifi.WpsInfo
+import android.net.wifi.p2p.WifiP2pConfig
+import android.widget.Toast
 
 
 class MainActivity : AppCompatActivity() {
@@ -32,6 +35,7 @@ class MainActivity : AppCompatActivity() {
 
         // GUI-Events mit Methoden verbinden
         BtnDiscover.setOnClickListener { discover() }
+        BtnConnect.setOnClickListener{ connect() }
 
         // Listen Adapter
         peersAdapater = ArrayAdapter(this,
@@ -86,8 +90,6 @@ class MainActivity : AppCompatActivity() {
             val refreshedPeers = peerList?.getDeviceList()
 
             if (refreshedPeers != peers) {
-                //peers.clear()
-                //peers.addAll(refreshedPeers!!.toList())
                 peersAdapater?.clear()
                 peersAdapater?.addAll(refreshedPeers!!.toList())
 
@@ -99,6 +101,27 @@ class MainActivity : AppCompatActivity() {
                 // no peers found
             }
         }
+    }
+
+    fun connect() {
+        // Picking the first device found on the network.
+        val device = peers[0]
+
+        val config = WifiP2pConfig()
+        config.deviceAddress = device.deviceAddress
+        config.wps.setup = WpsInfo.PBC
+
+        mManager?.connect(mChannel, config, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
+                // WiFiDirectBroadcastReceiver notifies zus. Ignore for now
+            }
+
+            override fun onFailure(reason: Int) {
+                Toast.makeText(this@MainActivity, "Connect failed. Retry.", Toast.LENGTH_SHORT).show()
+            }
+
+
+        })
     }
 
 }
