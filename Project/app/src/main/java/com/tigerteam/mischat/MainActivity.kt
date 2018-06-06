@@ -16,6 +16,11 @@ import kotlinx.android.synthetic.main.activity_main.*
 import android.net.wifi.WpsInfo
 import android.net.wifi.p2p.WifiP2pConfig
 import android.widget.Toast
+import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo
+import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest
+import java.lang.reflect.Array.get
+
+
 
 
 class MainActivity : AppCompatActivity() {
@@ -29,6 +34,8 @@ class MainActivity : AppCompatActivity() {
     var peersAdapater : ArrayAdapter<WifiP2pDevice>? = null
     var receivedMessages = ArrayList<String>()
 
+    var services = ArrayList<WifiP2pDevice>()
+    var servicesAdapater : ArrayAdapter<WifiP2pDevice>? = null
 
 
 
@@ -39,6 +46,8 @@ class MainActivity : AppCompatActivity() {
         // GUI-Events mit Methoden verbinden
         BtnDiscover.setOnClickListener { discover() }
         BtnConnect.setOnClickListener{ connect() }
+        BtnPublishService.setOnClickListener{ publishService() }
+        BtnDiscoverServices.setOnClickListener{ detectServices() }
 
         // Listen Adapter und Verbindung mit List View
         peersAdapater = ArrayAdapter(this,
@@ -50,6 +59,11 @@ class MainActivity : AppCompatActivity() {
                 android.R.layout.simple_list_item_1,
                 receivedMessages)
         ListViewReceivedMessages.adapter = receivedMessagesAdapater
+
+        servicesAdapater = ArrayAdapter(this,
+                android.R.layout.simple_list_item_1,
+                services)
+        ListViewServices.adapter = servicesAdapater
 
 
         // Register App with Wi-Fi P2P Framework and create Channel to connect the app with the Wi-Fi P2P Framework
@@ -132,5 +146,107 @@ class MainActivity : AppCompatActivity() {
 
         })
     }
+
+
+
+    // Service Discovery
+
+    fun publishService() {
+        startRegistration()
+    }
+
+    fun detectServices() {
+        discoverService()
+        executeServiceRequest()
+    }
+
+
+    // Add a local service
+    private fun startRegistration() {
+        //  Create a string map containing information about your service.
+        var record : HashMap<String, String> = HashMap()
+        record.put("listenport", "8888")
+        record.put("buddyname", "John Doe" + (Math.random() * 1000).toInt())
+        record.put("available", "visible")
+
+        // Service information.  Pass it an instance name, service type
+        // _protocol._transportlayer , and the map containing
+        // information other devices will want once they connect to this one.
+        val serviceInfo = WifiP2pDnsSdServiceInfo.newInstance("_test", "_presence._tcp", record)
+
+        // Add the local service, sending the service info, network channel,
+        // and listener that will be used to indicate success or failure of
+        // the request.
+        mManager?.addLocalService(mChannel, serviceInfo, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
+                // Command successful! Code isn't necessarily needed here,
+                // Unless you want to update the UI or add logging statements.
+                Log.e("MainActivity", "ActionListener OnSuccess")
+            }
+
+            override fun onFailure(arg0: Int) {
+                // Command failed.  Check for P2P_UNSUPPORTED, ERROR, or BUSY
+                Log.e("MainActivity", "Failure")
+            }
+        })
+    }
+
+    val buddies = HashMap<String, String>()
+    fun discoverService() {
+
+        var txtListener = object : WifiP2pManager.DnsSdTxtRecordListener{
+            override fun onDnsSdTxtRecordAvailable(fullDomainName: String?, txtRecordMap: MutableMap<String, String>?, srcDevice: WifiP2pDevice?) {
+                buddies.put(srcDevice!!.deviceAddress, txtRecordMap!!.getValue("buddyname"))
+            }
+        }
+
+        var servListener = object : WifiP2pManager.DnsSdServiceResponseListener{
+            override fun onDnsSdServiceAvailable(instanceName: String?, registrationType: String?, srcDevice: WifiP2pDevice?) {
+                // Update the device name with the human-friendly version from
+                // the DnsTxtRecord, assuming one arrived.
+
+                if (buddies.containsKey(srcDevice?.deviceAddress)) {
+                    srcDevice?.deviceName = buddies.getValue(srcDevice!!.deviceAddress)
+                }
+
+                // Add to the custom adapter defined specifically for showing
+                // wifi devices.
+                servicesAdapater?.add(srcDevice)
+            }
+        }
+
+        mManager?.setDnsSdResponseListeners(mChannel, servListener, txtListener)
+
+
+    }
+
+    fun executeServiceRequest() {
+        var serviceRequest = WifiP2pDnsSdServiceRequest.newInstance()
+        mManager?.addServiceRequest(mChannel, serviceRequest, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
+                // Success!
+                Log.e("MainActivity", "Service Request OnSuccess")
+            }
+
+            override fun onFailure(reason: Int) {
+                // Command failed. Check for P2P_UNSUPPORTED, ERROR or BUSY
+                Log.e("MainActivity", "Service Request OnFailure")
+            }
+
+        })
+
+        mManager?.discoverServices(mChannel, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
+                // Success
+                Log.e("MainActivity", "Discover Services OnSuccess")
+            }
+
+            override fun onFailure(reason: Int) {
+                // Command failed.  Check for P2P_UNSUPPORTED, ERROR, or BUSY
+                Log.e("MainActivity", "Discover Services OnFailure")
+            }
+        })
+    }
+
 
 }
