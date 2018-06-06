@@ -27,6 +27,9 @@ class MainActivity : AppCompatActivity() {
 
     var peers = ArrayList<WifiP2pDevice>()
     var peersAdapater : ArrayAdapter<WifiP2pDevice>? = null
+    var receivedMessages = ArrayList<String>()
+
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,17 +40,23 @@ class MainActivity : AppCompatActivity() {
         BtnDiscover.setOnClickListener { discover() }
         BtnConnect.setOnClickListener{ connect() }
 
-        // Listen Adapter
+        // Listen Adapter und Verbindung mit List View
         peersAdapater = ArrayAdapter(this,
                 android.R.layout.simple_list_item_1,
                 peers)
         ListViewPeers.adapter = peersAdapater
 
+        var receivedMessagesAdapater : ArrayAdapter<String> = ArrayAdapter(this,
+                android.R.layout.simple_list_item_1,
+                receivedMessages)
+        ListViewReceivedMessages.adapter = receivedMessagesAdapater
+
+
         // Register App with Wi-Fi P2P Framework and create Channel to connect the app with the Wi-Fi P2P Framework
         // Außerdem den BroadcastReceiver erstellen um von Änderungen zu erfahren
         mManager = getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
         mChannel = mManager?.initialize(this, mainLooper, null)
-        mReceiver = WiFiDirectBroadcastReceiver(mManager!!, mChannel!!, this, peerListListener)
+        mReceiver = WiFiDirectBroadcastReceiver(mManager!!, mChannel!!, this, peerListListener, receivedMessagesAdapater)
 
         mIntentFilter = IntentFilter()
         mIntentFilter?.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION)

@@ -6,11 +6,12 @@ import android.util.Log
 import android.widget.TextView
 import java.io.IOException
 import android.system.Os.accept
+import android.widget.ArrayAdapter
 import java.io.DataInputStream
 import java.net.ServerSocket
 
 
-class ServerTask(val context : Context) : AsyncTask<Void, Void, String?>() {
+class ServerTask(val context : Context, val receivedMsgAdapater : ArrayAdapter<String>) : AsyncTask<Void, Void, String?>() {
 
     override fun doInBackground(vararg params: Void?): String? {
         try {
@@ -39,6 +40,7 @@ class ServerTask(val context : Context) : AsyncTask<Void, Void, String?>() {
 
     override fun onPostExecute(result: String?) {
         Log.e("ServerTask", result)
+        receivedMsgAdapater.add(result)
         super.onPostExecute(result)
     }
 }
