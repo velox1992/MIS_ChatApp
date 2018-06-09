@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">MISChat</string>
+    <string name="registration_error">A registration occurred. Make sure you\'re online the first time
+    that you install this sample app</string>
 </resources>
