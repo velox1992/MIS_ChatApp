@@ -19,8 +19,7 @@ import android.widget.Toast
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest
 import java.lang.reflect.Array.get
-
-
+import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
@@ -34,8 +33,10 @@ class MainActivity : AppCompatActivity() {
     var peersAdapater : ArrayAdapter<WifiP2pDevice>? = null
     var receivedMessages = ArrayList<String>()
 
-    var services = ArrayList<WifiP2pDevice>()
-    var servicesAdapater : ArrayAdapter<WifiP2pDevice>? = null
+    //var services = ArrayList<WifiP2pDevice>()
+    //var servicesAdapater : ArrayAdapter<WifiP2pDevice>? = null
+    var services = ArrayList<String>()
+    var servicesAdapater : ArrayAdapter<String>? = null
 
 
 
@@ -48,6 +49,7 @@ class MainActivity : AppCompatActivity() {
         BtnConnect.setOnClickListener{ connect() }
         BtnPublishService.setOnClickListener{ publishService() }
         BtnDiscoverServices.setOnClickListener{ detectServices() }
+        BtnAddMessage.setOnClickListener{ addMessageToRecord() }
 
         // Listen Adapter und Verbindung mit List View
         peersAdapater = ArrayAdapter(this,
@@ -160,11 +162,15 @@ class MainActivity : AppCompatActivity() {
         executeServiceRequest()
     }
 
+    fun addMessageToRecord() {
+        record.put(Calendar.getInstance().time.toString(),EditMessageText.text.toString())
+    }
 
     // Add a local service
+    var record : HashMap<String, String> = HashMap()
     private fun startRegistration() {
         //  Create a string map containing information about your service.
-        var record : HashMap<String, String> = HashMap()
+
         record.put("listenport", "8888")
         record.put("buddyname", "John Doe" + (Math.random() * 1000).toInt())
         record.put("available", "visible")
@@ -196,7 +202,10 @@ class MainActivity : AppCompatActivity() {
 
         var txtListener = object : WifiP2pManager.DnsSdTxtRecordListener{
             override fun onDnsSdTxtRecordAvailable(fullDomainName: String?, txtRecordMap: MutableMap<String, String>?, srcDevice: WifiP2pDevice?) {
-                buddies.put(srcDevice!!.deviceAddress, txtRecordMap!!.getValue("buddyname"))
+                buddies.clear()
+                                for (entries in txtRecordMap!!.iterator()) {
+                    buddies?.put(entries.key, entries.value)
+                }
             }
         }
 
@@ -211,7 +220,11 @@ class MainActivity : AppCompatActivity() {
 
                 // Add to the custom adapter defined specifically for showing
                 // wifi devices.
-                servicesAdapater?.add(srcDevice)
+                //servicesAdapater?.add(srcDevice)
+                servicesAdapater?.clear()
+                for ((key, value) in buddies) {
+                    servicesAdapater?.add(key + " : " + value)
+                }
             }
         }
 
