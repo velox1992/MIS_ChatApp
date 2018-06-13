@@ -4,6 +4,14 @@ apply plugin: 'kotlin-android'
 
 apply plugin: 'kotlin-android-extensions'
 
+apply plugin: 'idea'
+
+idea {
+    module {
+        downloadJavadoc = true
+    }
+}
+
 android {
     compileSdkVersion 27
     defaultConfig {
@@ -31,4 +39,5 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     implementation 'com.github.Crash-Test-Buddies:WiFi-Buddy:v0.8.0'
+    implementation 'io.underdark:underdark:1.+'
 }
