@@ -14,18 +14,25 @@ import edu.rit.se.wifibuddy.WifiDirectHandler
 import android.support.v4.content.LocalBroadcastManager
 import android.content.Intent
 import android.content.BroadcastReceiver
-
-
+import android.widget.Toast
+import edu.rit.se.wifibuddy.CommunicationManager
+import edu.rit.se.wifibuddy.DnsSdService
+import edu.rit.se.wifibuddy.DnsSdTxtRecord
 
 
 class MainActivity : AppCompatActivity() {
 
 
     var TAG = "MainActivity"
-    var wifiDirectHandler : WifiDirectHandler? = null
+    var wifiDirectHandler : WifiDirectHandler? = null   // Zentraler Ansprechpartner für die WifiBuddy API
     var wifiDirectHandlerBound : Boolean = false
     var mIntent : Intent? = null
 
+    var SdServiceMap :  Map<String, DnsSdService>? = null   // Informationen zu gefunden Services
+    var TxtRecordMap : Map<String, DnsSdTxtRecord>? = null  // Informationen zu gefunden Services
+
+    var services = ArrayList<DnsSdService>()
+    var servicesAdapater : ArrayAdapter<DnsSdService>? = null
 
 
 
@@ -38,14 +45,23 @@ class MainActivity : AppCompatActivity() {
         BtnRegisterService.setOnClickListener { registerService() }
         BtnStartServiceDiscovery.setOnClickListener { startServiceDiscovery() }
         BtnGetDiscoveryResults.setOnClickListener{ getDiscoverResults() }
+        BtnSendMessage.setOnClickListener{ sendMessage() }
+
+        servicesAdapater = ArrayAdapter(this,
+                android.R.layout.simple_list_item_1,
+                services)
+        ListViewFoundServices.adapter = servicesAdapater
+        ListViewFoundServices.setOnItemClickListener { parent, view, position, id ->
+            Toast.makeText(this, "Position Clicked:"+" "+position,Toast.LENGTH_SHORT).show()
+            wifiDirectHandler?.initiateConnectToService(services[position])
+        }
+
 
         registerCommunicationReceiver()
         Log.i(TAG, "MainActivity created");
 
-
         mIntent = Intent(this, WifiDirectHandler::class.java)
         var result = bindService(mIntent, wifiServiceConnection, Context.BIND_AUTO_CREATE)
-        // result == false
     }
 
 
@@ -88,23 +104,19 @@ class MainActivity : AppCompatActivity() {
 
 
 
-
-
-
-
-
-
-
-
-
     fun startServiceDiscovery() {
         wifiDirectHandler?.continuouslyDiscoverServices()
 
     }
 
     fun getDiscoverResults() {
-        var TxtRecordMap = wifiDirectHandler?.getDnsSdTxtRecordMap()
-        var SdServiceMap = wifiDirectHandler?.getDnsSdServiceMap()
+        TxtRecordMap = wifiDirectHandler?.getDnsSdTxtRecordMap()
+        SdServiceMap = wifiDirectHandler?.getDnsSdServiceMap()
+
+        servicesAdapater?.clear()
+        for  (entries in SdServiceMap!!.iterator()) {
+            servicesAdapater!!.add(entries.value)
+        }
     }
 
     fun registerService() {
@@ -113,6 +125,19 @@ class MainActivity : AppCompatActivity() {
         wifiDirectHandler?.addLocalService("TigerChatService", record)
     }
 
+    fun sendMessage() {
+
+        // Das hier sollte asynchron ablaufen!
+        var hCommunicationManager = wifiDirectHandler!!.communicationManager
+
+        if (hCommunicationManager != null) {
+            var hMsg: String = "Hello, here is " + android.os.Build.MODEL
+            var hMsgByteArray = hMsg.toByteArray(Charsets.UTF_8)
+            var hEmptyByteArray = ByteArray(2)
+            FCommunicationManager!!.write(hEmptyByteArray)
+        }
+
+    }
 
 
 
@@ -120,17 +145,7 @@ class MainActivity : AppCompatActivity() {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+    var FCommunicationManager : CommunicationManager? = null
     /**
      * BroadcastReceiver used to receive Intents fired from the WifiDirectHandler when P2P events occur
      * Used to update the UI and receive communication messages
@@ -143,11 +158,21 @@ class MainActivity : AppCompatActivity() {
             if (intent.action == WifiDirectHandler.Action.SERVICE_CONNECTED) {
                 // This device has connected to another device broadcasting the same service
                 Log.i(TAG, "Service connected")
+
+
+                FCommunicationManager = wifiDirectHandler!!.communicationManager
+
+
             } else if (intent.action == WifiDirectHandler.Action.DEVICE_CHANGED) {
                 // This device's information has changed
                 Log.i(TAG, "This device changed")
             } else if (intent.action == WifiDirectHandler.Action.MESSAGE_RECEIVED) {
                 // A message from the Communication Manager has been received
+                // Die Nachricht erhält man über den Intent
+                var hMsgByte = intent.getByteArrayExtra(WifiDirectHandler.MESSAGE_KEY)
+                var hMsg = String(hMsgByte, Charsets.UTF_8)
+                TxtViewMsg.text = hMsg
+
                 Log.i(TAG, "Message received")
             } else if (intent.action == WifiDirectHandler.Action.WIFI_STATE_CHANGED) {
                 // Wi-Fi has been enabled or disabled
