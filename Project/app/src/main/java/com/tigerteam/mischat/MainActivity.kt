@@ -14,10 +14,12 @@ import edu.rit.se.wifibuddy.WifiDirectHandler
 import android.support.v4.content.LocalBroadcastManager
 import android.content.Intent
 import android.content.BroadcastReceiver
+import android.support.coreutils.R.id.async
 import android.widget.Toast
 import edu.rit.se.wifibuddy.CommunicationManager
 import edu.rit.se.wifibuddy.DnsSdService
 import edu.rit.se.wifibuddy.DnsSdTxtRecord
+import kotlin.concurrent.thread
 
 
 class MainActivity : AppCompatActivity() {
@@ -127,17 +129,23 @@ class MainActivity : AppCompatActivity() {
 
     fun sendMessage() {
 
-        // Das hier sollte asynchron ablaufen!
-        var hCommunicationManager = wifiDirectHandler!!.communicationManager
+        thread(start=true){
+            Log.e("MainActivity", "Thread launched")
+            // Das hier sollte asynchron ablaufen!
+            var hCommunicationManager = wifiDirectHandler!!.communicationManager
 
-        if (hCommunicationManager != null) {
-            var hMsg: String = "Hello, here is " + android.os.Build.MODEL
-            var hMsgByteArray = hMsg.toByteArray(Charsets.UTF_8)
-            var hEmptyByteArray = ByteArray(2)
-            FCommunicationManager!!.write(hEmptyByteArray)
+            if (hCommunicationManager != null) {
+                var hMsg: String = "Hello, here is " + android.os.Build.MODEL
+                hMsg = EdtTextMsg.text.toString()
+                var hMsgByteArray = hMsg.toByteArray(Charsets.UTF_8)
+                FCommunicationManager!!.write(hMsgByteArray)
+            }
         }
-
     }
+
+
+
+
 
 
 
