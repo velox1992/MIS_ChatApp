@@ -45,55 +45,18 @@
     <ListView
         android:id="@+id/ListViewReceivedMessages"
         android:layout_width="368dp"
-        android:layout_height="38dp"
+        android:layout_height="164dp"
+        android:layout_marginBottom="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/EditMessageText"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/ListViewPeers" />
-
-    <Button
-        android:id="@+id/BtnPublishService"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="Publish Service"
-        app:layout_constraintEnd_toStartOf="@+id/BtnDiscoverServices"
-        app:layout_constraintHorizontal_bias="0.239"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/ListViewReceivedMessages"
-        tools:text="Publish Service" />
-
-    <Button
-        android:id="@+id/BtnDiscoverServices"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginTop="8dp"
-        android:text="Discover Services"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/ListViewReceivedMessages"
-        tools:text="Discover Services" />
-
-    <ListView
-        android:id="@+id/ListViewServices"
-        android:layout_width="368dp"
-        android:layout_height="0dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginTop="8dp"
-        app:layout_constraintBottom_toTopOf="@+id/EditMessageText"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/BtnPublishService" />
 
     <EditText
         android:id="@+id/EditMessageText"

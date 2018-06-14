@@ -13,7 +13,7 @@ class ClientClass(val serverAddress : InetAddress) : AsyncTask<String, Void, Voi
         try {
             socket = Socket(serverAddress,8888)
             var DOS : DataOutputStream = DataOutputStream(socket.getOutputStream())
-            DOS.writeUTF(params[0]);
+            DOS.writeUTF("Hey Param ;)");
 
             socket.close()
             Log.e("ClientClass", "Client finished sending message: "+ params[0])
