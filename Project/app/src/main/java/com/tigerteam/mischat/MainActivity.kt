@@ -15,6 +15,7 @@ import android.support.v4.content.LocalBroadcastManager
 import android.content.Intent
 import android.content.BroadcastReceiver
 import android.support.coreutils.R.id.async
+import android.support.v4.app.ActivityCompat
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -23,13 +24,14 @@ import android.widget.Toast
 import edu.rit.se.wifibuddy.CommunicationManager
 import edu.rit.se.wifibuddy.DnsSdService
 import edu.rit.se.wifibuddy.DnsSdTxtRecord
-import kotlin.concurrent.thread
 
+import kotlin.concurrent.thread
+import android.Manifest
 
 class MainActivity : AppCompatActivity() {
 
 
-
+    private val PERMISSION_REQUEST_LOCATION = 123
     internal var node: Node? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,6 +40,12 @@ class MainActivity : AppCompatActivity() {
 
 
         sendFrameButton.setOnClickListener{ sendFrames() }
+
+        requestPermissions(arrayOf(
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION
+        ), PERMISSION_REQUEST_LOCATION)
+
 
         node = Node(this)
     }
