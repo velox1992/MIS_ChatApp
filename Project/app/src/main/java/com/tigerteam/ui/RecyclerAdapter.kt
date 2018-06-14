@@ -5,7 +5,6 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.TextView
 import com.tigerteam.mischat.R
 
@@ -13,15 +12,13 @@ class RecyclerAdapter : RecyclerView.Adapter<RecyclerAdapter.ViewHolder>()
 {
 	inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 	{
-		var itemImage: ImageView
-		var itemTitle: TextView
-		var itemDetail: TextView
+		var itemChatName : TextView
+		var itemLastChatMessage : TextView
 
 		init
 		{
-			itemImage = itemView.findViewById(R.id.item_image)
-			itemTitle = itemView.findViewById(R.id.item_title)
-			itemDetail = itemView.findViewById(R.id.item_detail)
+			itemChatName = itemView.findViewById(R.id.lblChatName)
+			itemLastChatMessage = itemView.findViewById(R.id.lblLastChatMessage)
 
 			itemView.setOnClickListener{ v : View->
 				var position: Int = getAdapterPosition()
@@ -33,12 +30,14 @@ class RecyclerAdapter : RecyclerView.Adapter<RecyclerAdapter.ViewHolder>()
 	}
 
 
-	private val titles = arrayOf("Chapter One",
+	private val titles = arrayOf(
+			"Chapter One",
 			"Chapter Two", "Chapter Three", "Chapter Four",
 			"Chapter Five", "Chapter Six", "Chapter Seven",
 			"Chapter Eight")
 
-	private val details = arrayOf("Item one details", "Item two details",
+	private val details = arrayOf(
+			"Item one details", "Item two details",
 			"Item three details", "Item four details",
 			"Item five details", "Item six details",
 			"Item seven details", "Item eight details")
@@ -62,7 +61,7 @@ class RecyclerAdapter : RecyclerView.Adapter<RecyclerAdapter.ViewHolder>()
 	{
 		val v = LayoutInflater
 				.from(viewGroup.context)
-				.inflate(R.layout.card_chat_overview_layout, viewGroup, false)
+				.inflate(R.layout.item_chat_overview, viewGroup, false)
 
 		return ViewHolder(v)
 	}
@@ -73,8 +72,8 @@ class RecyclerAdapter : RecyclerView.Adapter<RecyclerAdapter.ViewHolder>()
 	//
 	override fun onBindViewHolder(viewHolder: ViewHolder, i: Int)
 	{
-		viewHolder.itemTitle.text = titles[i]
-		viewHolder.itemDetail.text = details[i]
+		viewHolder.itemChatName.text = titles[i]
+		viewHolder.itemLastChatMessage.text = details[i]
 		//viewHolder.itemImage.setImageResource(images[i])
 	}
 
