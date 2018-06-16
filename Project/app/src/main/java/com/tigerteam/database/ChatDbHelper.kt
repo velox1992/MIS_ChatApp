@@ -7,6 +7,10 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.util.Log
 import com.tigerteam.database.DbObjects.*
+import com.tigerteam.mischat.Constants
+import com.tigerteam.ui.Objects.ChatItem
+import com.tigerteam.ui.Objects.ChatOverviewItem
+import com.tigerteam.ui.Objects.ChatUserItem
 import java.util.*
 
 
@@ -229,8 +233,9 @@ class ChatDbHelper(context: Context)
 
     /**
      * Upsert (Update, sonst Insert) eines Parameters-Objektes.
+     * Liefert True bei Insert, False bei Update.
      */
-    override fun upsertParameter(param : Parameter){
+    override fun upsertParameter(param : Parameter) : Boolean{
         val db = this.writableDatabase
 
         val values = ContentValues()
@@ -246,6 +251,8 @@ class ChatDbHelper(context: Context)
             db.insert(PARAMETERS_T, null, values)
         }
         db.close()
+
+        return affectedRows == 0;
     }
 
 
@@ -322,8 +329,9 @@ class ChatDbHelper(context: Context)
 
     /**
      * Upsert (Update, sonst Insert) eines User-Objektes.
+     * Liefert True bei Insert, False bei Update.
      */
-    override fun upsertUser(user: User) {
+    override fun upsertUser(user: User) : Boolean {
         val db = this.writableDatabase
 
         val values = ContentValues()
@@ -338,6 +346,8 @@ class ChatDbHelper(context: Context)
             db.insert(USERS_T, null, values)
         }
         db.close()
+
+        return affectedRows == 0;
     }
 
     /// END User
@@ -383,8 +393,9 @@ class ChatDbHelper(context: Context)
 
     /**
      * Upsert (Update, sonst Insert) eines User-Objektes.
+     * Liefert True bei Insert, False bei Update.
      */
-    override fun upsertChat(chat: Chat) {
+    override fun upsertChat(chat: Chat) : Boolean {
 
         val db = this.writableDatabase
 
@@ -400,6 +411,8 @@ class ChatDbHelper(context: Context)
             db.insert(CHATS_T, null, values)
         }
         db.close()
+
+        return affectedRows == 0;
     }
 
     /// END Chat
@@ -448,8 +461,9 @@ class ChatDbHelper(context: Context)
 
     /**
      * Upsert (Update, sonst Insert) eines chatUser-Objektes.
+     * Liefert True bei Insert, False bei Update.
      */
-    override fun upsertChatUser(chatUser: ChatUser) {
+    override fun upsertChatUser(chatUser: ChatUser) : Boolean {
         val db = this.writableDatabase
 
         val values = ContentValues()
@@ -465,6 +479,8 @@ class ChatDbHelper(context: Context)
             db.insert(CHAT_USERS_T, null, values)
         }
         db.close()
+
+        return affectedRows == 0;
     }
 
     /// END ChatUsers
@@ -551,8 +567,9 @@ class ChatDbHelper(context: Context)
 
     /**
      * Upsert (Update, sonst Insert) eines Message-Objektes.
+     * Liefert True bei Insert, False bei Update.
      */
-    override fun upsertMessage(msg: ChatMessage) {
+    override fun upsertMessage(msg: ChatMessage) : Boolean{
         val db = this.writableDatabase
 
         val values = ContentValues()
@@ -571,6 +588,8 @@ class ChatDbHelper(context: Context)
             db.insert(MESSAGES_T, null, values)
         }
         db.close()
+
+        return affectedRows == 0;
     }
 
     /// END Messages
@@ -605,8 +624,9 @@ class ChatDbHelper(context: Context)
 
     /**
      * Upsert (Update, sonst Insert) eines Hash-Objektes.
+     * Liefert True bei Insert, False bei Update.
      */
-    private fun UpsertHash(hash : Hash) {
+    private fun UpsertHash(hash : Hash) : Boolean {
         val db = this.writableDatabase
 
         val values = ContentValues()
@@ -622,6 +642,8 @@ class ChatDbHelper(context: Context)
             db.insert(HASHES_T, null, values)
         }
         db.close()
+
+        return affectedRows == 0;
     }
 
 
@@ -780,4 +802,218 @@ class ChatDbHelper(context: Context)
 
 
 
+
+    /// High-Level Chat-Funktionen für die Visualisierung
+
+
+    /**
+     * Liefert die Chat-Übersicht für den eigenen User
+     * Null, wenn eigene User-Id nicht gefunden werden konnte.
+     * Chat-Übersicht ist so sortiert, dass erstes Element der Chat mit der jüngsten Nachricht ist.
+     * Achtung: Es muss in einem Chat keine letzte Nachricht geben!
+     */
+    override fun getChatOverviewItems(): List<ChatOverviewItem>? {
+        var ret : List<ChatOverviewItem>?  = null
+
+        val ownUserIdParam = getParameter(Constants.PARAM_OWN_USER_ID)
+
+        if(ownUserIdParam != null) {
+            ret = mutableListOf<ChatOverviewItem>()
+
+            // hole die Chats, wo ich drin bin, und dann die neuste Message dazu noch mit rein
+            val query = "SELECT $CHATS_T.$CHATS_C_NAME ,$CHATS_T.$CHATS_C_ID , $USERS_T.$USERS_C_NAME , $USERS_T.$USERS_C_ID, " +
+                    "$MESSAGES_C_DATATYPE, $MESSAGES_C_DATA, $MESSAGES_C_SENDTIMESTAMP " +
+                    "FROM $CHAT_USERS_T " +
+                    "JOIN $CHATS_T on ($CHAT_USERS_T.$CHAT_USERS_C_CHATID = $CHATS_T.$CHATS_C_ID) " +
+                    "LEFT JOIN $MESSAGES_T on ($MESSAGES_T.$MESSAGES_C_ID = " +
+                    "(SELECT $MESSAGES_C_ID FROM $MESSAGES_T " +
+                    "WHERE $MESSAGES_T.$MESSAGES_C_CHATID = $CHAT_USERS_T.$CHAT_USERS_C_CHATID " +
+                    "ORDER BY $MESSAGES_C_SENDTIMESTAMP DESC " +
+                    "LIMIT 1)" + // get only the Last message
+                    ") " +
+                    "LEFT JOIN $USERS_T on ($MESSAGES_C_SENDERID = $USERS_T.$USERS_C_ID) " +
+                    "WHERE $CHAT_USERS_C_USERID = ? " +
+                    "ORDER BY $MESSAGES_C_SENDTIMESTAMP DESC"
+
+            val db = this.writableDatabase
+            val cursor = db.rawQuery(query, arrayOf(ownUserIdParam.value))
+            if (cursor.moveToFirst()) {
+                do {
+                    val chatName = cursor.getString(0)
+                    val chatId = cursor.getString(1)
+                    val lastUserName = cursor.getString(2)
+                    val lastUserId = cursor.getString(3)
+                    val lastMessageDataType = cursor.getString(4)
+                    val lastMessageData = cursor.getString(5)
+                    val lastMessageTimeStamp = Date(cursor.getLong(6))
+                    val chatOverviewItem = ChatOverviewItem(chatName, chatId, lastUserName, lastUserId, lastMessageDataType, lastMessageData, lastMessageTimeStamp)
+
+                    ret.add(chatOverviewItem)
+                } while (cursor.moveToNext())
+
+                cursor.close()
+            }
+            db.close()
+        }
+
+        val retString = if(ret == null)  "NULL" else "${ret.size} Elements"
+        WriteLog(Log.INFO, "getChatOverviewItems", "returning ${retString}")
+
+        return ret;
+    }
+
+
+
+    /**
+     * Liefert die Nachrichten eines Chats in der Sortierung, dass die neuste Nachricht an letzter Stelle ist.
+     */
+    override fun getMessagesForChat(chatId : String) : List<ChatItem> {
+        var ret = mutableListOf<ChatItem>()
+
+        // hole die Nachrichten einer ChatID
+        val query = "SELECT $USERS_T.$USERS_C_ID, $USERS_T.$USERS_C_NAME, $MESSAGES_C_DATATYPE, $MESSAGES_C_DATA, $MESSAGES_C_SENDTIMESTAMP " +
+                "FROM $MESSAGES_T " +
+                "JOIN $USERS_T ON ($MESSAGES_C_SENDERID = $USERS_T.$USERS_C_ID) " +
+                "WHERE $MESSAGES_T.$MESSAGES_C_CHATID = ? " +
+                "ORDER BY $MESSAGES_C_SENDTIMESTAMP ASC"
+
+        val db = this.writableDatabase
+        val cursor =  db.rawQuery(query, arrayOf(chatId))
+        if(cursor.moveToFirst())
+        {
+            do
+            {
+                val userId = cursor.getString(0)
+                val userName = cursor.getString(1)
+                val messageDataType = cursor.getString(2)
+                val messageData = cursor.getString(3)
+                val messageTimeStamp = Date(cursor.getLong(4))
+                val chatItem = ChatItem(userId, userName, messageDataType, messageData, messageTimeStamp)
+
+                ret.add(chatItem)
+            }
+            while (cursor.moveToNext())
+
+            cursor.close()
+        }
+        db.close()
+
+        val retString = if(ret == null)  "NULL" else "${ret.size} Elements"
+        WriteLog(Log.INFO, "getChatOverviewItems", "returning ${retString}")
+
+        return ret;
+    }
+
+
+    /**
+     * Liefert die Benutzer eines Chats (Owner immer als erstes selektiert)
+     */
+    override fun getUsersForChat(chatId : String) : List<ChatUserItem>  {
+        var ret = mutableListOf<ChatUserItem>()
+
+        // hole alle Mitglieder eines Chats
+        val query = "SELECT  $USERS_T.$USERS_C_ID, $USERS_T.$USERS_C_NAME, $CHAT_USERS_T.$CHAT_USERS_C_ISOWNER " +
+                "FROM $CHAT_USERS_T " +
+                "JOIN $USERS_T ON ($CHAT_USERS_T.$CHAT_USERS_C_USERID = $USERS_T.$USERS_C_ID) " +
+                "WHERE $CHAT_USERS_T.$CHAT_USERS_C_CHATID = ? " +
+                "ORDER BY $CHAT_USERS_T.$CHAT_USERS_C_ISOWNER DESC"
+
+        val db = this.writableDatabase
+        val cursor =  db.rawQuery(query, arrayOf(chatId))
+        if(cursor.moveToFirst())
+        {
+            do
+            {
+                val userId = cursor.getString(0)
+                val userName = cursor.getString(1)
+                val isOwner = cursor.getInt(2) > 0
+                val chatUserItem = ChatUserItem(userId, userName, isOwner)
+
+                ret.add(chatUserItem)
+            }
+            while (cursor.moveToNext())
+
+            cursor.close()
+        }
+        db.close()
+
+        val retString = if(ret == null)  "NULL" else "${ret.size} Elements"
+        WriteLog(Log.INFO, "getChatOverviewItems", "returning ${retString}")
+
+        return ret;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ///// CREATE Test-DAta
+
+
+    /**
+    var me = User("1111", "Nils")
+    var other = User("2222", "jemand anderes")
+    db.upsertUser(me)
+    db.upsertUser(other)
+
+    val ownUserId = Parameter(Constants.PARAM_OWN_USER_ID, "String", me.id)
+    db.upsertParameter(ownUserId)
+
+    var chat = Chat("0000", "Cooler Chat")
+    db.upsertChat(chat)
+    var chatUser1 = ChatUser(chat.id, me.id, true)
+    var chatUser2= ChatUser(chat.id, other.id, false)
+    db.upsertChatUser(chatUser1)
+    db.upsertChatUser(chatUser2)
+
+    var msgMe = ChatMessage("1", Date(Date().time -100), "text", "Hallo", me.id, chat.id)
+    var msgOther = ChatMessage("2", Date(Date().time -50), "text", "Welt", other.id, chat.id)
+
+    db.upsertMessage(msgMe)
+    db.upsertMessage(msgOther)
+
+
+
+
+    chat = Chat("0001", "Cooler Chat 2")
+    db.upsertChat(chat)
+    chatUser1 = ChatUser(chat.id, me.id, true)
+    chatUser2= ChatUser(chat.id, other.id, false)
+    db.upsertChatUser(chatUser1)
+    db.upsertChatUser(chatUser2)
+
+    msgMe = ChatMessage("10", Date(Date().time -100), "text", "Hallo", me.id, chat.id)
+    msgOther = ChatMessage("11", Date(), "text", "Welt 2", other.id, chat.id)
+
+    db.upsertMessage(msgMe)
+    db.upsertMessage(msgOther)
+
+
+
+
+
+    chat = Chat("0002", "Cooler Chat 3 ohne Message")
+    db.upsertChat(chat)
+    chatUser1 = ChatUser(chat.id, me.id, true)
+    chatUser2= ChatUser(chat.id, other.id, false)
+    db.upsertChatUser(chatUser1)
+    db.upsertChatUser(chatUser2)
+     */
+
+
+
+    ///// END CREATE Test-DAta
 }
