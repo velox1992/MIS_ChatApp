@@ -190,10 +190,6 @@ class ChatService : Service()
 
 				val contacts = getAllContacts()
 
-				var t = db.getAllChatUsers();
-				db.upsertUser(User("456", "Georg", "+4915787491864"))
-
-
 				if(contacts.size > 0){
 					val numbers = contacts.map { it.phoneNumber }
 					val usersWithThisApp = db.getUsersWithPhoneNumberIn(numbers)
