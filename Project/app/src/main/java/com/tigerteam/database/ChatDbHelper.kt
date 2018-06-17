@@ -39,7 +39,8 @@ class ChatDbHelper(context: Context)
 
         val createUsersStatement = "CREATE TABLE ${USERS_T} (" +
                 "${USERS_C_ID} TEXT PRIMARY KEY, " +
-                "${USERS_C_NAME} TEXT " +
+                "${USERS_C_NAME} TEXT, " +
+                "${USERS_C_PHONE_NUMBER} TEXT " +
                 ")"
 
         val createChatsStatement = "CREATE TABLE ${CHATS_T} (" +
@@ -135,7 +136,7 @@ class ChatDbHelper(context: Context)
      * Konstanten für die Datenbank
      */
     companion object{
-        private const val DATABASE_VERSION = 1
+        private const val DATABASE_VERSION = 2
         private const val DATABASE_NAME = "MISChatApp.db"
 
         // Parameters-Tabelle
@@ -151,6 +152,7 @@ class ChatDbHelper(context: Context)
 
         const val USERS_C_ID = "id"
         const val USERS_C_NAME = "name"
+        const val USERS_C_PHONE_NUMBER = "phoneNumber"
 
 
         // Chats-Tabelle
@@ -277,8 +279,9 @@ class ChatDbHelper(context: Context)
     private fun cursorToUser(cursor: Cursor) : User {
         val id = cursor.getString(0)
         val name = cursor.getString(1)
+        val number = cursor.getString(2)
 
-        var user = User(id, name)
+        var user = User(id, name, number)
         return user
     }
 
@@ -337,6 +340,7 @@ class ChatDbHelper(context: Context)
         val values = ContentValues()
         values.put(USERS_C_ID, user.id)
         values.put(USERS_C_NAME, user.name)
+        values.put(USERS_C_PHONE_NUMBER, user.phoneNumber)
 
         // erst versuch Update, wenn nichts betroffen, dann insert
         val affectedRows = db.update(USERS_T, values, USERS_C_ID + " = ?", arrayOf(user.id ))
@@ -943,7 +947,38 @@ class ChatDbHelper(context: Context)
         return ret;
     }
 
+    /**
+     * Liefert alle Benutzer zu den übergebenen Telefonnummern
+     */
+    override fun getUsersWithPhoneNumberIn(numbers: List<String>) : List<User> {
+        val ret = mutableListOf<User>()
 
+        var inString = ""
+        // string zusammenbauen
+        for(number in numbers)
+        {
+            inString += "'${number}' ,"
+        }
+        inString = inString.trimEnd(',')
+
+
+        val query = "SELECT * FROM $USERS_T " +
+                "WHERE $USERS_C_PHONE_NUMBER IN ($inString) "
+
+        val db = this.writableDatabase
+        val cursor =  db.rawQuery(query, null)
+        if(cursor.moveToFirst())
+        {
+            do {
+                val user = cursorToUser(cursor)
+                ret.add(user)
+            }
+            while (cursor.moveToNext())
+            cursor.close()
+        }
+        db.close()
+        return ret
+    }
 
 
 

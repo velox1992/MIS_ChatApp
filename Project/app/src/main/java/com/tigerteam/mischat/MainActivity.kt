@@ -1,16 +1,25 @@
 package com.tigerteam.mischat
 
+import android.Manifest
+import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
 import android.os.IBinder
+import android.support.v4.app.ActivityCompat
 import android.util.Log
 import android.view.View
+import android.widget.Toast
+import com.tigerteam.ui.CreateChatActivity
 import com.tigerteam.ui.FirstUseActivity
+import com.tigerteam.ui.Objects.CreateChatContact
 import kotlinx.android.synthetic.main.activity_main.*
+import java.io.Serializable
+import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity()
 {
@@ -20,6 +29,7 @@ class MainActivity : AppCompatActivity()
 
 	private val TAG = "MainActivity"
     private val USER_NAME_REQUEST = 666
+	private val CREATE_CHAT_REQUEST = 45
 
 	private val chatServiceConnection = object : ServiceConnection
 	{
@@ -30,7 +40,7 @@ class MainActivity : AppCompatActivity()
 			isChatServiceBound = true
 
 			//----
-			startFirstUseActivity()
+            startFirstUseActivity()
 		}
 
 		override fun onServiceDisconnected(name: ComponentName)
@@ -66,7 +76,36 @@ class MainActivity : AppCompatActivity()
 
 		// Bind to service to get the service API-Object
 		bindService(chatIntent, chatServiceConnection, Context.BIND_AUTO_CREATE)
+
+
+		// Permissions holen
+		var neededPermissions = mutableListOf<String>()
+
+		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_NUMBERS) != PackageManager.PERMISSION_GRANTED) {
+			neededPermissions.add(Manifest.permission.READ_PHONE_NUMBERS)
+		}
+
+		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+			neededPermissions.add(Manifest.permission.READ_CONTACTS)
+		}
+
+
+		if(neededPermissions.size > 0)
+		{
+			ActivityCompat.requestPermissions(this, neededPermissions.toTypedArray(), 22)
+		}
 	}
+
+	override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+		if(requestCode == 22 && grantResults.any{it == PackageManager.PERMISSION_DENIED} )
+		{
+			Log.e(TAG, "Exit because not getting Permission")
+			exitProcess(55);
+		}
+	}
+
 
 	override fun onStart()
 	{
@@ -102,6 +141,21 @@ class MainActivity : AppCompatActivity()
 				startFirstUseActivity()
 			}
 	    }
+		else if (requestCode == CREATE_CHAT_REQUEST)
+		{
+			if(resultCode == RESULT_OK)
+			{
+				val chatName = data!!.extras.getString(Constants.EXTRA_CHAT_NAME)
+				val chatUsers = (data!!.extras.get(Constants.EXTRA_CHAT_USERS) as ArrayList<CreateChatContact>).toList()
+
+				chatService?.CreateChat(chatName, chatUsers)
+
+			}
+			else
+			{
+				Toast.makeText(this,"Etwas ist schief gelaufen beim Chat Erstellen :(", Toast.LENGTH_LONG).show()
+			}
+		}
 
         super.onActivityResult(requestCode, resultCode, data)
     }
@@ -117,6 +171,10 @@ class MainActivity : AppCompatActivity()
 	}
 
 
+	fun createChatButtonClicked(view : View){
+		startCreateChat();
+	}
+
 	//----------------------------------------------------------------------------------------------
 	// Methods
 	//----------------------------------------------------------------------------------------------
@@ -129,4 +187,14 @@ class MainActivity : AppCompatActivity()
 			startActivityForResult(intent, USER_NAME_REQUEST)
 		}
 	}
+
+
+    fun startCreateChat() {
+		val contacts = chatService!!.getContactsForCreatingChat()
+
+        val intent = Intent(this, CreateChatActivity::class.java)
+		intent.putExtra(Constants.EXTRA_CHAT_USERS, ArrayList(contacts))
+        startActivityForResult(intent, CREATE_CHAT_REQUEST)
+    }
+
 }
