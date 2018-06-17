@@ -64,16 +64,19 @@ class ServerTask(val context : Context, val receivedMsgAdapater : ArrayAdapter<S
 
             // Behandlung der Client-Kommunikation in eigenem Thread
             var clientHandlerTask : ClientHandlerTask = ClientHandlerTask(client)
+            clientHandlerTask.run()
+            /*
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
                 clientHandlerTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
             else
                 clientHandlerTask.execute()
+                */
         }
     }
 
 
 
-    inner class ClientHandlerTask(val client : Socket) : AsyncTask<Void, Void, Void?>() {
+    inner class ClientHandlerTask(val client : Socket) : Runnable {
 
         val TAG = "ClientHandlerTask"
 
@@ -83,11 +86,11 @@ class ServerTask(val context : Context, val receivedMsgAdapater : ArrayAdapter<S
             reader = BufferedReader(InputStreamReader(client.getInputStream()))
         }
 
-        override fun doInBackground(vararg params: Void?): Void? {
+        override fun run() {
             var hNachricht : String
 
             var hStreamFinished = false
-            while(hStreamFinished) {
+            while(!hStreamFinished) {
                 hNachricht = reader!!.readLine()
                 if (hNachricht == null) {
                     hStreamFinished = true
@@ -99,8 +102,9 @@ class ServerTask(val context : Context, val receivedMsgAdapater : ArrayAdapter<S
                     sendToAllClients(hNachricht)
                 }
             }
-            return null
+            return
         }
+
 
         fun sendToAllClients(_message : String){
             for (clientWriter in clientWriterList) {

@@ -10,8 +10,9 @@ class ClientClass(val serverAddress : InetAddress) : AsyncTask<String, Void, Voi
 
     val TAG = "ClientClass"
     var client : Socket? = null
-    var reader : BufferedReader? = null
-    var writer : PrintWriter? = null
+    //var reader : BufferedReader? = null
+    //var writer : PrintWriter? = null
+    var writer : DataOutputStream? = null
 
     var clientActive = true
     var id = 0
@@ -22,11 +23,7 @@ class ClientClass(val serverAddress : InetAddress) : AsyncTask<String, Void, Voi
 
             // Behandlung der Server-Kommunikation in eigenem Thread
             var serverHandlerTask : ClientClass.ServerListenerTask = ServerListenerTask(client!!)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-                serverHandlerTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
-            else
-                serverHandlerTask.execute()
-
+            serverHandlerTask.run()
 
 
             while (clientActive) {
@@ -43,14 +40,16 @@ class ClientClass(val serverAddress : InetAddress) : AsyncTask<String, Void, Voi
 
     fun connectToServer() {
         client = Socket(serverAddress,8888)
-        reader = BufferedReader(InputStreamReader(client!!.getInputStream()))
-        writer = PrintWriter(client!!.getOutputStream())
+        //writer = PrintWriter(client!!.getOutputStream())
+        writer = DataOutputStream(client!!.getOutputStream())
+        //reader = BufferedReader(InputStreamReader(client!!.getInputStream()))
+
 
         Log.e(TAG, "Netzwerkverbindung hergestellt!")
     }
 
     fun sendMessageToServer() {
-        writer!!.println("Eine Nachricht" + id + "\n")
+        writer!!.writeUTF("Eine Nachricht" + id + "\n")
         writer!!.flush()
         id++
     }
@@ -77,7 +76,7 @@ class ClientClass(val serverAddress : InetAddress) : AsyncTask<String, Void, Voi
         }
     }
 
-    inner class ServerListenerTask(val client : Socket) : AsyncTask<Void, Void, Void?>() {
+    inner class ServerListenerTask(val client : Socket) : Runnable {
 
         val TAG = "ServerListenerTask"
 
@@ -87,7 +86,8 @@ class ClientClass(val serverAddress : InetAddress) : AsyncTask<String, Void, Voi
             reader = BufferedReader(InputStreamReader(client.getInputStream()))
         }
 
-        override fun doInBackground(vararg params: Void?): Void? {
+
+        override fun run() {
             var hNachricht : String
 
             var hStreamFinished = false
@@ -102,7 +102,7 @@ class ClientClass(val serverAddress : InetAddress) : AsyncTask<String, Void, Voi
                 }
             }
             Log.d(TAG, "Stream zu ende")
-            return null
+            return
         }
 
 
