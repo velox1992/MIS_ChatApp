@@ -22,8 +22,8 @@ class ClientClass(val serverAddress : InetAddress) : AsyncTask<String, Void, Voi
             connectToServer()
 
             // Behandlung der Server-Kommunikation in eigenem Thread
-            var serverHandlerTask : ClientClass.ServerListenerTask = ServerListenerTask(client!!)
-            serverHandlerTask.run()
+            var serverHandlerThread = Thread(ServerListenerTask(client!!))
+            serverHandlerThread.start()
 
 
             while (clientActive) {
@@ -52,6 +52,7 @@ class ClientClass(val serverAddress : InetAddress) : AsyncTask<String, Void, Voi
         writer!!.writeUTF("Eine Nachricht" + id + "\n")
         writer!!.flush()
         id++
+        Thread.sleep(2000)
     }
 
     companion object {
@@ -91,14 +92,15 @@ class ClientClass(val serverAddress : InetAddress) : AsyncTask<String, Void, Voi
             var hNachricht : String
 
             var hStreamFinished = false
-            while(!hStreamFinished) {
+            //while(!hStreamFinished) {
+            while(true) {
                 hNachricht = reader!!.readLine()
                 if (hNachricht == null) {
                     hStreamFinished = true
 
                 }
                 else {
-                    Log.d(TAG, "Nachricht erhalten: " + hNachricht)
+                    Log.d(TAG, "Nachricht vom Server erhalten: " + hNachricht)
                 }
             }
             Log.d(TAG, "Stream zu ende")
@@ -109,6 +111,7 @@ class ClientClass(val serverAddress : InetAddress) : AsyncTask<String, Void, Voi
     }
 
 }
+
 
 
 

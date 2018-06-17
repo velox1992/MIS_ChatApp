@@ -16,7 +16,8 @@ class ServerTask(val context : Context, val receivedMsgAdapater : ArrayAdapter<S
 
     val TAG = "ServerTask"
     var serverSocket : ServerSocket? = null
-    var clientWriterList = ArrayList<PrintWriter>()
+    var clientWriterList = ArrayList<DataOutputStream>()
+    var clients = ArrayList<Socket>()
 
     override fun doInBackground(vararg params: Void?): Void? {
         try {
@@ -25,8 +26,8 @@ class ServerTask(val context : Context, val receivedMsgAdapater : ArrayAdapter<S
 
             listenToClients()
 
-            closeClients()
-            stopServer()
+            //closeClients()
+            //stopServer()
 
             Log.e(TAG, "Der Server wurde beendet")
             return null
@@ -60,11 +61,15 @@ class ServerTask(val context : Context, val receivedMsgAdapater : ArrayAdapter<S
             Log.e(TAG, "Ein neuer Client hat sich verbunden")
 
             // Merken des Output Streams um später noch Nachrichten an die Clients zu senden
-            clientWriterList.add(PrintWriter(client.getOutputStream()))
+            clientWriterList.add(DataOutputStream(client.getOutputStream()))
+            clients.add(client)
 
             // Behandlung der Client-Kommunikation in eigenem Thread
-            var clientHandlerTask : ClientHandlerTask = ClientHandlerTask(client)
-            clientHandlerTask.run()
+            var clientHandlerThread = Thread(ClientHandlerTask(client))
+            clientHandlerThread.start()
+            while (!clientHandlerThread.isAlive) {
+
+            }
             /*
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
                 clientHandlerTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
@@ -106,11 +111,15 @@ class ServerTask(val context : Context, val receivedMsgAdapater : ArrayAdapter<S
         }
 
 
+        var id = 0
         fun sendToAllClients(_message : String){
-            for (clientWriter in clientWriterList) {
-                clientWriter.print(_message)
-                clientWriter.flush()
+            for (client in clients) {
+                var writer = DataOutputStream(client!!.getOutputStream())
+                writer!!.writeUTF("Eine Nachricht die vom Server kommt" + id + "\n")
+                writer!!.flush()
+                id++
             }
+
         }
     }
 }
