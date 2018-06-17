@@ -74,6 +74,9 @@ class WiFiDirectBroadcastReceiver(private val mManager: WifiP2pManager, private 
                             else
                                 server.execute()
                             Log.e("WifiBroadcastReceiver:", "Server is running")
+
+
+
                         } else if (info.groupFormed) {
                             // The other device acts as the peer (client). In this case,
                             // you'll want to create a peer thread that connects
@@ -86,6 +89,7 @@ class WiFiDirectBroadcastReceiver(private val mManager: WifiP2pManager, private 
                             } else {
                                 sender.execute(clientIp)
                             }
+
                         }
                     }
                 })

@@ -2,35 +2,34 @@ package com.tigerteam.mischat
 
 import android.content.Context
 import android.os.AsyncTask
+import android.os.Build
 import android.util.Log
 import android.widget.TextView
-import java.io.IOException
 import android.system.Os.accept
 import android.widget.ArrayAdapter
-import java.io.DataInputStream
+import java.io.*
 import java.net.ServerSocket
+import java.net.Socket
 
 
-class ServerTask(val context : Context, val receivedMsgAdapater : ArrayAdapter<String>) : AsyncTask<Void, Void, String?>() {
+class ServerTask(val context : Context, val receivedMsgAdapater : ArrayAdapter<String>) : AsyncTask<Void, Void, Void?>() {
 
-    override fun doInBackground(vararg params: Void?): String? {
+    val TAG = "ServerTask"
+    var serverSocket : ServerSocket? = null
+    var clientWriterList = ArrayList<PrintWriter>()
+
+    override fun doInBackground(vararg params: Void?): Void? {
         try {
-            /**
-             * Create a server socket and wait for client connections. This
-             * call blocks until a connection is accepted from a client
-             */
-            val serverSocket = ServerSocket(8888)
-            val client = serverSocket.accept()
-            /**
-             * If this code is reached, a client has connected and transferred data
-             */
-            Log.e("ServerTask ", "Client has connected")
-            val DIS = DataInputStream(client.getInputStream())
-            val msg_received = DIS.readUTF()
-            client.close()
-            serverSocket.close()
-            Log.e("ServerTask","Server has received the message: $msg_received")
-            return msg_received
+
+            runServer()
+
+            listenToClients()
+
+            closeClients()
+            stopServer()
+
+            Log.e(TAG, "Der Server wurde beendet")
+            return null
 
         } catch (e : IOException) {
             Log.e("ServerTask", e.message)
@@ -38,9 +37,77 @@ class ServerTask(val context : Context, val receivedMsgAdapater : ArrayAdapter<S
         return null
     }
 
-    override fun onPostExecute(result: String?) {
-        Log.e("ServerTask", result)
-        receivedMsgAdapater.add(result)
-        super.onPostExecute(result)
+    fun runServer() {
+        serverSocket = ServerSocket(8888)
+
+        Log.d(TAG, "Server started")
+    }
+
+    fun stopServer() {
+        serverSocket!!.close()
+    }
+
+    fun closeClients() {
+        for (clientWriter in clientWriterList) {
+            clientWriter.close()
+        }
+    }
+
+    fun listenToClients() {
+        // Immer auf Client-Verbindungen warten
+        while (true) {
+            val client = serverSocket!!.accept()
+            Log.e(TAG, "Ein neuer Client hat sich verbunden")
+
+            // Merken des Output Streams um später noch Nachrichten an die Clients zu senden
+            clientWriterList.add(PrintWriter(client.getOutputStream()))
+
+            // Behandlung der Client-Kommunikation in eigenem Thread
+            var clientHandlerTask : ClientHandlerTask = ClientHandlerTask(client)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+                clientHandlerTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
+            else
+                clientHandlerTask.execute()
+        }
+    }
+
+
+
+    inner class ClientHandlerTask(val client : Socket) : AsyncTask<Void, Void, Void?>() {
+
+        val TAG = "ClientHandlerTask"
+
+        var reader : BufferedReader? = null
+
+        init {
+            reader = BufferedReader(InputStreamReader(client.getInputStream()))
+        }
+
+        override fun doInBackground(vararg params: Void?): Void? {
+            var hNachricht : String
+
+            var hStreamFinished = false
+            while(hStreamFinished) {
+                hNachricht = reader!!.readLine()
+                if (hNachricht == null) {
+                    hStreamFinished = true
+
+                }
+                else {
+                    Log.d(TAG, "Nachricht erhalten: " + hNachricht)
+                    // Die empfangene Nachricht
+                    sendToAllClients(hNachricht)
+                }
+            }
+            return null
+        }
+
+        fun sendToAllClients(_message : String){
+            for (clientWriter in clientWriterList) {
+                clientWriter.print(_message)
+                clientWriter.flush()
+            }
+        }
     }
 }
+
