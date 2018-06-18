@@ -1,6 +1,9 @@
 package com.tigerteam.database
 
 import com.tigerteam.database.DbObjects.*
+import com.tigerteam.ui.Objects.ChatItem
+import com.tigerteam.ui.Objects.ChatOverviewItem
+import com.tigerteam.ui.Objects.ChatUserItem
 import java.util.*
 import kotlin.collections.HashMap
 
@@ -18,8 +21,9 @@ interface IChatDbHelper {
 
     /**
      * Upsert (Update, sonst Insert) eines Parameters-Objektes.
+     * Liefert True bei Insert, False bei Update.
      */
-    fun upsertParameter(param : Parameter)
+    fun upsertParameter(param : Parameter) : Boolean
 
     /**
      * Lösche einen Parameter anhand seines Namens.
@@ -43,8 +47,9 @@ interface IChatDbHelper {
 
     /**
      * Upsert (Update, sonst Insert) eines User-Objektes.
+     * Liefert True bei Insert, False bei Update.
      */
-    fun upsertUser(user : User)
+    fun upsertUser(user : User) : Boolean
 
 
 
@@ -58,8 +63,9 @@ interface IChatDbHelper {
 
     /**
      * Upsert (Update, sonst Insert) eines User-Objektes.
+     * Liefert True bei Insert, False bei Update.
      */
-    fun upsertChat(chat: Chat)
+    fun upsertChat(chat: Chat):Boolean
 
 
 
@@ -72,8 +78,9 @@ interface IChatDbHelper {
 
     /**
      * Upsert (Update, sonst Insert) eines chatUser-Objektes.
+     * Liefert True bei Insert, False bei Update.
      */
-    fun upsertChatUser(chatUser: ChatUser)
+    fun upsertChatUser(chatUser: ChatUser) : Boolean
 
 
 
@@ -97,8 +104,9 @@ interface IChatDbHelper {
 
     /**
      * Upsert (Update, sonst Insert) eines Message-Objektes.
+     * Liefert True bei Insert, False bei Update.
      */
-    fun upsertMessage(message: ChatMessage)
+    fun upsertMessage(message: ChatMessage) : Boolean
 
 
 
@@ -158,5 +166,29 @@ interface IChatDbHelper {
     // High-Level Chat-Funktionen für die Visualisierung.
     // Lesend mit Joins
 
+    /**
+     * Liefert die Chat-Übersicht für den eigenen User
+     * Null, wenn eigene User-Id nicht gefunden werden konnte.
+     * Chat-Übersicht ist so sortiert, dass erstes Element der Chat mit der jüngsten Nachricht ist.
+     * Achtung: Es muss in einem Chat keine letzte Nachricht geben!
+     */
+    fun getChatOverviewItems() : List<ChatOverviewItem>?
+
+
+    /**
+     * Liefert die Nachrichten eines Chats in der Sortierung, dass die neuste Nachricht an letzter Stelle ist.
+     */
+    fun getMessagesForChat(chatId : String) : List<ChatItem>
+
+    /**
+     * Liefert die Benutzer eines Chats (Owner immer als erstes selektiert)
+     */
+    fun getUsersForChat(chatId : String) : List<ChatUserItem>
+
+
+    /**
+     * Liefert alle Benutzer zu den übergebenen Telefonnummern
+     */
+    fun getUsersWithPhoneNumberIn(numbers : List<String>) : List<User>
 
 }
