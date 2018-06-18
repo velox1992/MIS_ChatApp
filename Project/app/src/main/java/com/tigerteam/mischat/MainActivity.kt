@@ -14,6 +14,7 @@ import android.support.v4.app.ActivityCompat
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import com.tigerteam.ui.ChatOverviewActivity
 import com.tigerteam.ui.CreateChatActivity
 import com.tigerteam.ui.FirstUseActivity
 import com.tigerteam.ui.Objects.CreateChatContact
@@ -175,6 +176,12 @@ class MainActivity : AppCompatActivity()
 		startCreateChat();
 	}
 
+
+	fun chatOverviewButtonClicked(view: View){
+		startChatOverview()
+	}
+
+
 	//----------------------------------------------------------------------------------------------
 	// Methods
 	//----------------------------------------------------------------------------------------------
@@ -196,5 +203,11 @@ class MainActivity : AppCompatActivity()
 		intent.putExtra(Constants.EXTRA_CHAT_USERS, ArrayList(contacts))
         startActivityForResult(intent, CREATE_CHAT_REQUEST)
     }
+
+
+	fun startChatOverview() {
+		val intent = Intent(this, ChatOverviewActivity::class.java)
+		startActivity(intent)
+	}
 
 }
