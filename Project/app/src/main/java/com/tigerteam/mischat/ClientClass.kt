@@ -2,11 +2,13 @@ package com.tigerteam.mischat
 
 import android.os.AsyncTask
 import android.os.Build
+import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import java.io.*
 import java.net.*
 
-class ClientClass(val serverAddress : InetAddress) : AsyncTask<String, Void, Void>() {
+class ClientClass(val serverAddress : InetAddress, val mUIHandler: Handler) : AsyncTask<String, Void, Void>() {
 
     val TAG = "ClientClass"
     var client : Socket? = null
@@ -22,7 +24,7 @@ class ClientClass(val serverAddress : InetAddress) : AsyncTask<String, Void, Voi
             connectToServer()
 
             // Behandlung der Server-Kommunikation in eigenem Thread
-            var serverHandlerThread = Thread(ServerListenerTask(client!!))
+            var serverHandlerThread = Thread(ServerListenerTask(client!!, mUIHandler))
             serverHandlerThread.start()
 
 
@@ -49,7 +51,7 @@ class ClientClass(val serverAddress : InetAddress) : AsyncTask<String, Void, Voi
     }
 
     fun sendMessageToServer() {
-        writer!!.writeUTF("Eine Nachricht" + id + "\n")
+        writer!!.writeUTF(android.os.Build.MODEL + ": Eine Nachricht" + id + "\n")
         writer!!.flush()
         id++
         Thread.sleep(2000)
@@ -77,7 +79,7 @@ class ClientClass(val serverAddress : InetAddress) : AsyncTask<String, Void, Voi
         }
     }
 
-    inner class ServerListenerTask(val client : Socket) : Runnable {
+    inner class ServerListenerTask(val client : Socket, val mUiHandler: Handler) : Runnable {
 
         val TAG = "ServerListenerTask"
 
@@ -101,6 +103,17 @@ class ClientClass(val serverAddress : InetAddress) : AsyncTask<String, Void, Voi
                 }
                 else {
                     Log.d(TAG, "Nachricht vom Server erhalten: " + hNachricht)
+                    // This is a worker thread, so we cannot access any UI objects directly. But since we are
+                    // using a handler object and this handler is running inside the main loop, it will be able to access those UI objects with no problem.
+                    var hHandlerMessage = mUiHandler.obtainMessage()
+                    hHandlerMessage.what = Constants.HANDLER_CODE_NEW_CLIENT_MESSAGE    // Message-Code: kann selbst definiert werden
+                    var hBundle = Bundle()
+                    hBundle.putString("MessageKey", hNachricht)
+                    hHandlerMessage.data = hBundle
+                    mUiHandler.sendMessage(hHandlerMessage)
+
+
+
                 }
             }
             Log.d(TAG, "Stream zu ende")

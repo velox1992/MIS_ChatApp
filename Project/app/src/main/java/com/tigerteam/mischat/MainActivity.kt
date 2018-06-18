@@ -18,6 +18,9 @@ import android.net.wifi.p2p.WifiP2pConfig
 import android.widget.Toast
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest
+import android.os.Handler
+import android.os.Looper
+import android.os.Message
 import java.lang.reflect.Array.get
 import java.util.*
 
@@ -34,7 +37,24 @@ class MainActivity : AppCompatActivity() {
     var receivedMessages = ArrayList<String>()
     var receivedMessagesAdapater : ArrayAdapter<String>? = null
 
+    var mHandler = object : Handler(Looper.getMainLooper()) {
+        override fun handleMessage(msg: Message?) {
+            if (msg!!.what == Constants.HANDLER_CODE_NEW_CLIENT_MESSAGE){   // Selbst definierter Code
+                var hBundle = Bundle(msg.data)
+                var hNachricht = hBundle.getString("MessageKey")
+                receivedMessagesAdapater!!.add(hNachricht)
+            }
+            else if (msg!!.what == Constants.HANDLER_CODE_CLIENT_ROLE_DETERMINED){
+                LblClientOrServer.text = "I'm a client ;)"
+            }
+            else if (msg!!.what == Constants.HANDLER_CODE_SERVER_ROLE_DETERMINED){
+                LblClientOrServer.text = "I'm the server :)"
+            }
 
+        }
+
+
+    } // Um von Threads an den GUI Thread zu kommen
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -145,7 +165,6 @@ class MainActivity : AppCompatActivity() {
     fun setMessage(msg : String) {
         receivedMessagesAdapater!!.add(msg)
     }
-
 
 
 

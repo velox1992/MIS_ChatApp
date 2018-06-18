@@ -3,6 +3,8 @@ package com.tigerteam.mischat
 import android.content.Context
 import android.os.AsyncTask
 import android.os.Build
+import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import android.widget.TextView
 import android.system.Os.accept
@@ -12,7 +14,7 @@ import java.net.ServerSocket
 import java.net.Socket
 
 
-class ServerTask(val context : Context, val receivedMsgAdapater : ArrayAdapter<String>) : AsyncTask<Void, Void, Void?>() {
+class ServerTask(val context : Context, val receivedMsgAdapater : ArrayAdapter<String>, val mUIHandler: Handler) : AsyncTask<Void, Void, Void?>() {
 
     val TAG = "ServerTask"
     var serverSocket : ServerSocket? = null
@@ -65,7 +67,7 @@ class ServerTask(val context : Context, val receivedMsgAdapater : ArrayAdapter<S
             clients.add(client)
 
             // Behandlung der Client-Kommunikation in eigenem Thread
-            var clientHandlerThread = Thread(ClientHandlerTask(client))
+            var clientHandlerThread = Thread(ClientHandlerTask(client, mUIHandler))
             clientHandlerThread.start()
             while (!clientHandlerThread.isAlive) {
 
@@ -81,7 +83,7 @@ class ServerTask(val context : Context, val receivedMsgAdapater : ArrayAdapter<S
 
 
 
-    inner class ClientHandlerTask(val client : Socket) : Runnable {
+    inner class ClientHandlerTask(val client : Socket, val mUIHandler: Handler) : Runnable {
 
         val TAG = "ClientHandlerTask"
 
@@ -103,7 +105,10 @@ class ServerTask(val context : Context, val receivedMsgAdapater : ArrayAdapter<S
                 }
                 else {
                     Log.d(TAG, "Nachricht erhalten: " + hNachricht)
-                    // Die empfangene Nachricht
+
+                    sendMessageToUi(hNachricht)
+
+                    // Die empfangene Nachricht wieder an alle Clients verteilen
                     sendToAllClients(hNachricht)
                 }
             }
@@ -115,11 +120,23 @@ class ServerTask(val context : Context, val receivedMsgAdapater : ArrayAdapter<S
         fun sendToAllClients(_message : String){
             for (client in clients) {
                 var writer = DataOutputStream(client!!.getOutputStream())
-                writer!!.writeUTF("Eine Nachricht die vom Server kommt" + id + "\n")
+                writer!!.writeUTF("[Server]: " + _message + "\n")
                 writer!!.flush()
+
                 id++
             }
 
+        }
+
+        fun sendMessageToUi(_message : String){
+            // This is a worker thread, so we cannot access any UI objects directly. But since we are
+            // using a handler object and this handler is running inside the main loop, it will be able to access those UI objects with no problem.
+            var hHandlerMessage = mUIHandler.obtainMessage()
+            hHandlerMessage.what = Constants.HANDLER_CODE_NEW_CLIENT_MESSAGE    // Message-Code: kann selbst definiert werden
+            var hBundle = Bundle()
+            hBundle.putString("MessageKey", _message)
+            hHandlerMessage.data = hBundle
+            mUIHandler.sendMessage(hHandlerMessage)
         }
     }
 }
