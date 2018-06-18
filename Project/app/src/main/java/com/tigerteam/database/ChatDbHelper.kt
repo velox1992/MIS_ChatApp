@@ -859,6 +859,9 @@ class ChatDbHelper(context: Context)
             }
             db.close()
         }
+        else{
+            WriteLog(Log.ERROR, "getChatOverviewItems", "Could not find Parameter with own User-Id")
+        }
 
         val retString = if(ret == null)  "NULL" else "${ret.size} Elements"
         WriteLog(Log.INFO, "getChatOverviewItems", "returning ${retString}")
@@ -957,13 +960,13 @@ class ChatDbHelper(context: Context)
         // string zusammenbauen
         for(number in numbers)
         {
-            inString += "'${number}' ,"
+            inString += "'${if (number.length <= 11) number else number.substring(number.length - 11)}' ,"
         }
         inString = inString.trimEnd(',')
 
 
         val query = "SELECT * FROM $USERS_T " +
-                "WHERE $USERS_C_PHONE_NUMBER IN ($inString) "
+                "WHERE substr($USERS_C_PHONE_NUMBER, -11) IN ($inString) "
 
         val db = this.writableDatabase
         val cursor =  db.rawQuery(query, null)

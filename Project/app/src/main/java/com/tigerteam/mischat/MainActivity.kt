@@ -24,6 +24,7 @@ import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity()
 {
+	/*
 	//----------------------------------------------------------------------------------------------
 	// Const Variables
 	//----------------------------------------------------------------------------------------------
@@ -149,7 +150,7 @@ class MainActivity : AppCompatActivity()
 				val chatName = data!!.extras.getString(Constants.EXTRA_CHAT_NAME)
 				val chatUsers = (data!!.extras.get(Constants.EXTRA_CHAT_USERS) as ArrayList<CreateChatContact>).toList()
 
-				chatService?.CreateChat(chatName, chatUsers)
+				chatService?.createChat(chatName, chatUsers)
 
 			}
 			else
@@ -209,5 +210,5 @@ class MainActivity : AppCompatActivity()
 		val intent = Intent(this, ChatOverviewActivity::class.java)
 		startActivity(intent)
 	}
-
+*/
 }

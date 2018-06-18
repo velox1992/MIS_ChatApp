@@ -1,15 +1,22 @@
-package com.tigerteam.ui
+package com.tigerteam.ui.helper
 
-import android.support.design.widget.Snackbar
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import com.tigerteam.mischat.R
+import com.tigerteam.ui.Objects.ChatOverviewItem
 
-class RecyclerAdapter : RecyclerView.Adapter<RecyclerAdapter.ViewHolder>()
-{
+class ChatOverviewRecyclerAdapter : RecyclerView.Adapter<ChatOverviewRecyclerAdapter.ViewHolder> {
+	private lateinit var itemsList : List<ChatOverviewItem>
+
+
+	constructor(items : List<ChatOverviewItem>) : super()
+	{
+		itemsList = items
+	}
+
 	inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 	{
 		var itemChatName : TextView
@@ -23,14 +30,13 @@ class RecyclerAdapter : RecyclerView.Adapter<RecyclerAdapter.ViewHolder>()
 			itemView.setOnClickListener{ v : View->
 				var position: Int = getAdapterPosition()
 
-				Snackbar.make(v, "Click detected on item $position",
-						Snackbar.LENGTH_LONG).setAction("Action", null).show()
+
 			}
 		}
 	}
 
 
-	private val titles = arrayOf(
+/*	private val titles = arrayOf(
 			"Chapter One",
 			"Chapter Two", "Chapter Three", "Chapter Four",
 			"Chapter Five", "Chapter Six", "Chapter Seven",
@@ -40,7 +46,7 @@ class RecyclerAdapter : RecyclerView.Adapter<RecyclerAdapter.ViewHolder>()
 			"Item one details", "Item two details",
 			"Item three details", "Item four details",
 			"Item five details", "Item six details",
-			"Item seven details", "Item eight details")
+			"Item seven details", "Item eight details")*/
 
 //	private val images = intArrayOf(
 //			R.drawable.android_image_1,
@@ -72,13 +78,18 @@ class RecyclerAdapter : RecyclerView.Adapter<RecyclerAdapter.ViewHolder>()
 	//
 	override fun onBindViewHolder(viewHolder: ViewHolder, i: Int)
 	{
-		viewHolder.itemChatName.text = titles[i]
-		viewHolder.itemLastChatMessage.text = details[i]
-		//viewHolder.itemImage.setImageResource(images[i])
+		val item  =itemsList[i];
+		viewHolder.itemChatName.text = item.chatName
+		if(!item.lastUserID.isNullOrBlank()) {
+			viewHolder.itemLastChatMessage.text = "${item.lastUserName} (${item.getDateInNiceFormat()}): ${item.lastMessageData}"
+		}
+		else{
+			viewHolder.itemLastChatMessage.text = "noch keine Nachrichten"
+		}
 	}
 
 	override fun getItemCount(): Int
 	{
-		return titles.size
+		return itemsList.size
 	}
 }
