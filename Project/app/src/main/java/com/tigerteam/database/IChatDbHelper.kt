@@ -185,4 +185,10 @@ interface IChatDbHelper {
      */
     fun getUsersForChat(chatId : String) : List<ChatUserItem>
 
+
+    /**
+     * Liefert alle Benutzer zu den übergebenen Telefonnummern
+     */
+    fun getUsersWithPhoneNumberIn(numbers : List<String>) : List<User>
+
 }

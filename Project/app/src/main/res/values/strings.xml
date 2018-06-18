@@ -2,4 +2,8 @@
     <string name="app_name">MISChat</string>
     <string name="nickname">Nickname:</string>
     <string name="los_gehts">Los gehts</string>
+    <string name="chatname">Chatname</string>
+    <string name="erstellen">Erstellen</string>
+    <string name="atLeastOneContactError">Es muss mindestens ein Kontakt ausgwählt werden!</string>
+    <string name="noChatNameError">Es muss ein Chatname vergeben werden!</string>
 </resources>

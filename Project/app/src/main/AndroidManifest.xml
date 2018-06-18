@@ -9,23 +9,25 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity
-            android:name="com.tigerteam.ui.FirstUseActivity" />
+        <activity android:name="com.tigerteam.ui.FirstUseActivity" />
 
         <service
             android:name=".ChatService"
             android:enabled="true"
             android:exported="false" />
 
-
+        <activity android:name="com.tigerteam.ui.CreateChatActivity"></activity>
     </application>
 
+
+
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 </manifest>
