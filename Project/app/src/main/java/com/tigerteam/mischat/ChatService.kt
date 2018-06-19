@@ -17,8 +17,8 @@ import android.telephony.TelephonyManager
 import com.tigerteam.ui.Objects.Contact
 import android.provider.ContactsContract
 import android.content.ContentResolver
-
-
+import com.tigerteam.ui.Objects.ChatItem
+import com.tigerteam.ui.Objects.ChatOverviewItem
 
 
 class ChatService : Service()
@@ -223,7 +223,7 @@ class ChatService : Service()
 	/**
 	 * Einen Chat anlegen in der DB
 	 */
-	public fun CreateChat(chatName : String, otherContacts : List<CreateChatContact>) {
+	public fun createChat(chatName : String, otherContacts : List<CreateChatContact>) {
 		// nicht vergessen mich selbst mit hinzuzufügen
 
 		try {
@@ -238,7 +238,7 @@ class ChatService : Service()
 			}
 
 			// den Ersteller nicht vergessen
-			var ownUserIdParam = db.getParameter(Constants.PARAM_OWN_USER_ID)
+			var ownUserIdParam = getOwnUserId()
 			if(ownUserIdParam != null) {
 				var chatUser = ChatUser(chat.id, ownUserIdParam!!.value, true)
 				db.upsertChatUser(chatUser)
@@ -252,5 +252,150 @@ class ChatService : Service()
 			Log.e(TAG, "CreateChat => " + e.toString())
 
 		}
+	}
+
+	/**
+	 * liefert die eigenen User-Id
+	 */
+	public fun getOwnUserId() : Parameter?
+	{
+		var ret : Parameter? = null
+		try {
+			ret = db.getParameter(Constants.PARAM_OWN_USER_ID)
+		}
+		catch (e: Exception)
+		{
+			Log.e(TAG, "getOwnUserId => " + e.toString())
+		}
+
+		return ret
+	}
+
+
+	/**
+	 * Liefert die Elemente der Chat-Übersicht
+	 */
+	public  fun getChatOverview() : List<ChatOverviewItem>
+	{
+		var ret = mutableListOf<ChatOverviewItem>()
+
+		try {
+
+			val chatOverviewItems = db.getChatOverviewItems()
+
+			if (chatOverviewItems != null) {
+				for(item in chatOverviewItems) {
+					ret.add(item)
+				}
+			} else {
+				Log.e(TAG, "getChatOverview => no data for ChatOverview" )
+			}
+		}
+		catch (e: Exception)
+		{
+			Log.e(TAG, "getChatOverview => " + e.toString())
+
+		}
+
+		return ret;
+	}
+
+
+	/**
+	 * Einträge aus einem Chat liefern
+	 */
+	public  fun getChatItems(chatId : String) : List<ChatItem>
+	{
+		var ret = mutableListOf<ChatItem>()
+
+		try {
+
+			val chatItems = db.getMessagesForChat(chatId)
+
+			if (chatItems != null) {
+				for(item in chatItems) {
+					ret.add(item)
+				}
+			} else {
+				Log.e(TAG, "getChatItems => no data for Chat" )
+			}
+		}
+		catch (e: Exception)
+		{
+			Log.e(TAG, "getChatItems => " + e.toString())
+
+		}
+
+		return ret;
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	public fun fillSomeTestData()
+	{
+		// diese nummer im Telefonbuch des Test-Gerätes einfügen:
+		val numberother = "015152222222"
+
+		var me = db.getUser(db.getParameter(Constants.PARAM_OWN_USER_ID)!!.value)!!
+		var other = User("2222", "Lulatsch", numberother)
+		db.upsertUser(other)
+
+		val ownUserId = Parameter(Constants.PARAM_OWN_USER_ID, "String", me.id)
+		db.upsertParameter(ownUserId)
+
+		var chat = Chat("0000", "Cooler Chat")
+		db.upsertChat(chat)
+		var chatUser1 = ChatUser(chat.id, me.id, true)
+		var chatUser2= ChatUser(chat.id, other.id, false)
+		db.upsertChatUser(chatUser1)
+		db.upsertChatUser(chatUser2)
+
+		var msgMe = ChatMessage("1", Date(Date().time -100), "text", "Hallo", me.id, chat.id)
+		var msgOther = ChatMessage("2", Date(Date().time -50), "text", "Welt", other.id, chat.id)
+
+		db.upsertMessage(msgMe)
+		db.upsertMessage(msgOther)
+
+
+
+
+		chat = Chat("0001", "Cooler Chat 2")
+		db.upsertChat(chat)
+		chatUser1 = ChatUser(chat.id, me.id, true)
+		chatUser2= ChatUser(chat.id, other.id, false)
+		db.upsertChatUser(chatUser1)
+		db.upsertChatUser(chatUser2)
+
+		msgMe = ChatMessage("10", Date(Date().time -100), "text", "Hallo", me.id, chat.id)
+		msgOther = ChatMessage("11", Date(), "text", "Welt 2", other.id, chat.id)
+
+		db.upsertMessage(msgMe)
+		db.upsertMessage(msgOther)
+
+
+
+
+
+		chat = Chat("0002", "Cooler Chat 3 ohne Message")
+		db.upsertChat(chat)
+		chatUser1 = ChatUser(chat.id, me.id, true)
+		chatUser2= ChatUser(chat.id, other.id, false)
+		db.upsertChatUser(chatUser1)
+		db.upsertChatUser(chatUser2)
 	}
 }

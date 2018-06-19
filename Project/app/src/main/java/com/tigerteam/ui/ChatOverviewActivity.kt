@@ -1,48 +1,57 @@
-package com.tigerteam.mischat
+package com.tigerteam.ui
 
 import android.Manifest
-import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.support.v7.app.AppCompatActivity
-import android.os.Bundle
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.os.Bundle
 import android.os.IBinder
 import android.support.v4.app.ActivityCompat
+import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.DividerItemDecoration
+import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.View
 import android.widget.Toast
-import com.tigerteam.ui.ChatOverviewActivity
-import com.tigerteam.ui.CreateChatActivity
-import com.tigerteam.ui.FirstUseActivity
+import com.tigerteam.mischat.ChatService
+import com.tigerteam.mischat.Constants
+import com.tigerteam.mischat.R
 import com.tigerteam.ui.Objects.CreateChatContact
+import com.tigerteam.ui.helper.ChatOverviewRecyclerAdapter
+import com.tigerteam.ui.helper.IChatOverviewItemClickListener
+
+import kotlinx.android.synthetic.main.activity_chat_overview.*
 import kotlinx.android.synthetic.main.activity_main.*
-import java.io.Serializable
+import kotlinx.android.synthetic.main.content_chat_overview.*
+import kotlin.math.log
 import kotlin.system.exitProcess
 
-class MainActivity : AppCompatActivity()
+class ChatOverviewActivity : AppCompatActivity()
 {
-	/*
+
+
 	//----------------------------------------------------------------------------------------------
 	// Const Variables
 	//----------------------------------------------------------------------------------------------
 
-	private val TAG = "MainActivity"
-    private val USER_NAME_REQUEST = 666
+	private val TAG = "ChatOverviewActivity"
+	private val USER_NAME_REQUEST = 666
 	private val CREATE_CHAT_REQUEST = 45
 
 	private val chatServiceConnection = object : ServiceConnection
 	{
 		override fun onServiceConnected(name: ComponentName?, service: IBinder?)
 		{
+			Log.i(TAG, "onServiceConnected")
 			val binder = service as ChatService.ChatServiceBinder
 			chatService = binder.getService()
 			isChatServiceBound = true
 
 			//----
-            startFirstUseActivity()
+			startFirstUseActivity()
 		}
 
 		override fun onServiceDisconnected(name: ComponentName)
@@ -61,14 +70,31 @@ class MainActivity : AppCompatActivity()
 	private var isChatServiceBound = false
 
 
+	private lateinit var recyclerView: RecyclerView
+	private lateinit var viewAdapter: RecyclerView.Adapter<*>
+	private lateinit var viewManager: RecyclerView.LayoutManager
+
+
+
+	private var chatClickListener = object : IChatOverviewItemClickListener
+	{
+		override fun clickedChat(chatId: String, chatName: String) {
+			startChatActivity(chatId, chatName)
+		}
+	}
+
 	//----------------------------------------------------------------------------------------------
 	// Overridden Methods
 	//----------------------------------------------------------------------------------------------
 
 	override fun onCreate(savedInstanceState: Bundle?)
-    {
+	{
 		super.onCreate(savedInstanceState)
-		setContentView(R.layout.activity_main)
+		setContentView(R.layout.activity_chat_overview)
+		setSupportActionBar(toolbar)
+
+
+
 
 		//----
 		val chatIntent = Intent(this, ChatService::class.java)
@@ -125,24 +151,26 @@ class MainActivity : AppCompatActivity()
 		super.onDestroy()
 	}
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?)
-    {
-	    Log.d(TAG, "onActivityResult($requestCode, $resultCode)")
+	override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?)
+	{
+		Log.d(TAG, "onActivityResult($requestCode, $resultCode)")
 
-	    if(requestCode == USER_NAME_REQUEST)
-	    {
+		if(requestCode == USER_NAME_REQUEST)
+		{
 			if(resultCode == RESULT_OK)
 			{
 				// User name was entered.
 				val userName : String = data!!.extras.getString(Constants.EXTRA_USER_NAME)
 				chatService?.firstUseCreateUser(userName)
+
+				initCompleted()
 			}
-		    else
+			else
 			{
 				// User clicked back button
 				startFirstUseActivity()
 			}
-	    }
+		}
 		else if (requestCode == CREATE_CHAT_REQUEST)
 		{
 			if(resultCode == RESULT_OK)
@@ -152,21 +180,18 @@ class MainActivity : AppCompatActivity()
 
 				chatService?.createChat(chatName, chatUsers)
 
-			}
-			else
-			{
-				Toast.makeText(this,"Etwas ist schief gelaufen beim Chat Erstellen :(", Toast.LENGTH_LONG).show()
+				showMyChats()
 			}
 		}
 
-        super.onActivityResult(requestCode, resultCode, data)
-    }
+		super.onActivityResult(requestCode, resultCode, data)
+	}
 
 
 	//----------------------------------------------------------------------------------------------
 	// Event Handler Methods
 	//----------------------------------------------------------------------------------------------
-
+/*
 	fun call_chat_service_button_clicked(view: View)
 	{
 		hello_world_text_view.text = chatService?.getVersion()
@@ -174,13 +199,10 @@ class MainActivity : AppCompatActivity()
 
 
 	fun createChatButtonClicked(view : View){
-		startCreateChat();
-	}
+		startCreateChatActivity();
+	}*/
 
 
-	fun chatOverviewButtonClicked(view: View){
-		startChatOverview()
-	}
 
 
 	//----------------------------------------------------------------------------------------------
@@ -194,21 +216,77 @@ class MainActivity : AppCompatActivity()
 			val intent = Intent(this, FirstUseActivity::class.java)
 			startActivityForResult(intent, USER_NAME_REQUEST)
 		}
+		else
+		{
+			initCompleted()
+		}
 	}
 
 
-    fun startCreateChat() {
+	fun initCompleted()
+	{
+		Log.i(TAG, "initCompleted")
+
+		fab.setOnClickListener { view ->
+			startCreateChatActivity()
+		}
+
+		chatService!!.fillSomeTestData()
+
+		showMyChats()
+	}
+
+
+	fun showMyChats(){
+		val chatOverviewITems = chatService!!.getChatOverview()
+
+		viewManager = LinearLayoutManager(this)
+
+		viewAdapter = ChatOverviewRecyclerAdapter(chatOverviewITems, chatClickListener)
+
+
+		recyclerView = findViewById<RecyclerView>(R.id.recycler_view).apply {
+			// use this setting to improve performance if you know that changes
+			// in content do not change the layout size of the RecyclerView
+			setHasFixedSize(true)
+
+			// use a linear layout manager
+			layoutManager = viewManager
+
+			// specify an viewAdapter (see also next example)
+			adapter = viewAdapter
+
+			// vertical Dividing-Lines
+			addItemDecoration(DividerItemDecoration(context, LinearLayoutManager.VERTICAL))
+		}
+	}
+
+
+
+	fun startCreateChatActivity() {
 		val contacts = chatService!!.getContactsForCreatingChat()
 
-        val intent = Intent(this, CreateChatActivity::class.java)
+		val intent = Intent(this, CreateChatActivity::class.java)
 		intent.putExtra(Constants.EXTRA_CHAT_USERS, ArrayList(contacts))
-        startActivityForResult(intent, CREATE_CHAT_REQUEST)
-    }
-
-
-	fun startChatOverview() {
-		val intent = Intent(this, ChatOverviewActivity::class.java)
-		startActivity(intent)
+		startActivityForResult(intent, CREATE_CHAT_REQUEST)
 	}
-*/
+
+
+	fun startChatActivity(chatId: String, chatName : String){
+		val chatItems = chatService!!.getChatItems(chatId)
+		val ownUserId = chatService!!.getOwnUserId()
+
+		if(ownUserId != null) {
+			val intent = Intent(this, ChatActivity::class.java)
+			intent.putExtra(Constants.EXTRA_CHAT_ITEMS, ArrayList(chatItems))
+			intent.putExtra(Constants.EXTRA_OWN_USER_ID, ownUserId.value)
+			intent.putExtra(Constants.EXTRA_CHAT_TITLE, chatName)
+			startActivity(intent)
+		}
+		else
+		{
+			Log.e(TAG, "startChatActivity -> NO Param with own UserId")
+		}
+	}
+
 }
