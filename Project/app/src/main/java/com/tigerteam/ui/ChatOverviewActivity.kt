@@ -180,7 +180,7 @@ class ChatOverviewActivity : AppCompatActivity()
 	//----------------------------------------------------------------------------------------------
 	// Event Handler Methods
 	//----------------------------------------------------------------------------------------------
-
+/*
 	fun call_chat_service_button_clicked(view: View)
 	{
 		hello_world_text_view.text = chatService?.getVersion()
@@ -188,8 +188,8 @@ class ChatOverviewActivity : AppCompatActivity()
 
 
 	fun createChatButtonClicked(view : View){
-		startCreateChat();
-	}
+		startCreateChatActivity();
+	}*/
 
 
 
@@ -217,10 +217,13 @@ class ChatOverviewActivity : AppCompatActivity()
 		Log.i(TAG, "initCompleted")
 
 		fab.setOnClickListener { view ->
-			startCreateChat()
+			startCreateChatActivity()
 		}
 
 		chatService!!.fillSomeTestData()
+
+		// TODO TEST
+		startChatActivity()
 
 		showMyChats()
 	}
@@ -252,11 +255,18 @@ class ChatOverviewActivity : AppCompatActivity()
 
 
 
-	fun startCreateChat() {
+	fun startCreateChatActivity() {
 		val contacts = chatService!!.getContactsForCreatingChat()
 
 		val intent = Intent(this, CreateChatActivity::class.java)
 		intent.putExtra(Constants.EXTRA_CHAT_USERS, ArrayList(contacts))
 		startActivityForResult(intent, CREATE_CHAT_REQUEST)
 	}
+
+
+	fun startChatActivity(){
+		val intent = Intent(this, ChatActivity::class.java)
+		startActivity(intent)
+	}
+
 }
