@@ -89,38 +89,54 @@ class ClientClass(val serverAddress : InetAddress, val mUIHandler: Handler) : As
             reader = BufferedReader(InputStreamReader(client.getInputStream()))
         }
 
+        var running = true
 
         override fun run() {
-            var hNachricht : String
+            try {
+                var hNachricht : String
+                var hStreamFinished = false
+                //while(!hStreamFinished) {
+                while(running) {
+                    if (reader == null) {
+                        running = false
+                        break
+                    }
+                    else {
+                        hNachricht = reader!!.readLine()
+                        if (hNachricht == null) {
+                            hStreamFinished = true
 
-            var hStreamFinished = false
-            //while(!hStreamFinished) {
-            while(true) {
-                hNachricht = reader!!.readLine()
-                if (hNachricht == null) {
-                    hStreamFinished = true
+                        }
+                        else {
+                            Log.d(TAG, "Nachricht vom Server erhalten: " + hNachricht)
+                            // This is a worker thread, so we cannot access any UI objects directly. But since we are
+                            // using a handler object and this handler is running inside the main loop, it will be able to access those UI objects with no problem.
+                            var hHandlerMessage = mUiHandler.obtainMessage()
+                            hHandlerMessage.what = Constants.HANDLER_CODE_NEW_CLIENT_MESSAGE    // Message-Code: kann selbst definiert werden
+                            var hBundle = Bundle()
+                            hBundle.putString("MessageKey", hNachricht)
+                            hHandlerMessage.data = hBundle
+                            mUiHandler.sendMessage(hHandlerMessage)
+                        }
+                    }
 
                 }
-                else {
-                    Log.d(TAG, "Nachricht vom Server erhalten: " + hNachricht)
-                    // This is a worker thread, so we cannot access any UI objects directly. But since we are
-                    // using a handler object and this handler is running inside the main loop, it will be able to access those UI objects with no problem.
-                    var hHandlerMessage = mUiHandler.obtainMessage()
-                    hHandlerMessage.what = Constants.HANDLER_CODE_NEW_CLIENT_MESSAGE    // Message-Code: kann selbst definiert werden
-                    var hBundle = Bundle()
-                    hBundle.putString("MessageKey", hNachricht)
-                    hHandlerMessage.data = hBundle
-                    mUiHandler.sendMessage(hHandlerMessage)
-
-
-
-                }
+                Log.d(TAG, "Stream zu ende")
+                return
             }
-            Log.d(TAG, "Stream zu ende")
-            return
+            catch (e : Exception) {
+                e.printStackTrace()
+            }
+            finally {
+                Log.d(TAG, "Exception aufgetreten")
+                clientActive = false
+
+                var hHandlerMessage = mUiHandler.obtainMessage()
+                hHandlerMessage.what = Constants.HANDLER_CODE_REGEGISTER_RECEIVER
+                mUiHandler.sendMessage(hHandlerMessage)
+            }
+
         }
-
-
     }
 
 }
