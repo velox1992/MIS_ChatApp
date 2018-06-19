@@ -10,11 +10,13 @@ import com.tigerteam.ui.Objects.ChatOverviewItem
 
 class ChatOverviewRecyclerAdapter : RecyclerView.Adapter<ChatOverviewRecyclerAdapter.ViewHolder> {
 	private lateinit var itemsList : List<ChatOverviewItem>
+	private lateinit var clickListener: IChatOverviewItemClickListener
 
 
-	constructor(items : List<ChatOverviewItem>) : super()
+	constructor(items : List<ChatOverviewItem>, clickListener: IChatOverviewItemClickListener) : super()
 	{
 		itemsList = items
+		this.clickListener = clickListener
 	}
 
 	inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
@@ -29,8 +31,8 @@ class ChatOverviewRecyclerAdapter : RecyclerView.Adapter<ChatOverviewRecyclerAda
 
 			itemView.setOnClickListener{ v : View->
 				var position: Int = getAdapterPosition()
-
-
+				val item  =itemsList[position];
+				clickListener.clickedChat(item.chatId, item.chatName)
 			}
 		}
 	}

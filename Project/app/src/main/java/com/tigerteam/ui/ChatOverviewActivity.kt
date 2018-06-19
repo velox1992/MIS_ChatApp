@@ -21,10 +21,12 @@ import com.tigerteam.mischat.Constants
 import com.tigerteam.mischat.R
 import com.tigerteam.ui.Objects.CreateChatContact
 import com.tigerteam.ui.helper.ChatOverviewRecyclerAdapter
+import com.tigerteam.ui.helper.IChatOverviewItemClickListener
 
 import kotlinx.android.synthetic.main.activity_chat_overview.*
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_chat_overview.*
+import kotlin.math.log
 import kotlin.system.exitProcess
 
 class ChatOverviewActivity : AppCompatActivity()
@@ -71,6 +73,15 @@ class ChatOverviewActivity : AppCompatActivity()
 	private lateinit var recyclerView: RecyclerView
 	private lateinit var viewAdapter: RecyclerView.Adapter<*>
 	private lateinit var viewManager: RecyclerView.LayoutManager
+
+
+
+	private var chatClickListener = object : IChatOverviewItemClickListener
+	{
+		override fun clickedChat(chatId: String, chatName: String) {
+			startChatActivity(chatId, chatName)
+		}
+	}
 
 	//----------------------------------------------------------------------------------------------
 	// Overridden Methods
@@ -222,9 +233,6 @@ class ChatOverviewActivity : AppCompatActivity()
 
 		chatService!!.fillSomeTestData()
 
-		// TODO TEST
-		startChatActivity()
-
 		showMyChats()
 	}
 
@@ -234,7 +242,7 @@ class ChatOverviewActivity : AppCompatActivity()
 
 		viewManager = LinearLayoutManager(this)
 
-		viewAdapter = ChatOverviewRecyclerAdapter(chatOverviewITems)
+		viewAdapter = ChatOverviewRecyclerAdapter(chatOverviewITems, chatClickListener)
 
 
 		recyclerView = findViewById<RecyclerView>(R.id.recycler_view).apply {
@@ -264,9 +272,21 @@ class ChatOverviewActivity : AppCompatActivity()
 	}
 
 
-	fun startChatActivity(){
-		val intent = Intent(this, ChatActivity::class.java)
-		startActivity(intent)
+	fun startChatActivity(chatId: String, chatName : String){
+		val chatItems = chatService!!.getChatItems(chatId)
+		val ownUserId = chatService!!.getOwnUserId()
+
+		if(ownUserId != null) {
+			val intent = Intent(this, ChatActivity::class.java)
+			intent.putExtra(Constants.EXTRA_CHAT_ITEMS, ArrayList(chatItems))
+			intent.putExtra(Constants.EXTRA_OWN_USER_ID, ownUserId.value)
+			intent.putExtra(Constants.EXTRA_CHAT_TITLE, chatName)
+			startActivity(intent)
+		}
+		else
+		{
+			Log.e(TAG, "startChatActivity -> NO Param with own UserId")
+		}
 	}
 
 }

@@ -17,6 +17,7 @@ import android.telephony.TelephonyManager
 import com.tigerteam.ui.Objects.Contact
 import android.provider.ContactsContract
 import android.content.ContentResolver
+import com.tigerteam.ui.Objects.ChatItem
 import com.tigerteam.ui.Objects.ChatOverviewItem
 
 
@@ -237,7 +238,7 @@ class ChatService : Service()
 			}
 
 			// den Ersteller nicht vergessen
-			var ownUserIdParam = db.getParameter(Constants.PARAM_OWN_USER_ID)
+			var ownUserIdParam = getOwnUserId()
 			if(ownUserIdParam != null) {
 				var chatUser = ChatUser(chat.id, ownUserIdParam!!.value, true)
 				db.upsertChatUser(chatUser)
@@ -252,6 +253,24 @@ class ChatService : Service()
 
 		}
 	}
+
+	/**
+	 * liefert die eigenen User-Id
+	 */
+	public fun getOwnUserId() : Parameter?
+	{
+		var ret : Parameter? = null
+		try {
+			ret = db.getParameter(Constants.PARAM_OWN_USER_ID)
+		}
+		catch (e: Exception)
+		{
+			Log.e(TAG, "getOwnUserId => " + e.toString())
+		}
+
+		return ret
+	}
+
 
 	/**
 	 * Liefert die Elemente der Chat-Übersicht
@@ -275,6 +294,35 @@ class ChatService : Service()
 		catch (e: Exception)
 		{
 			Log.e(TAG, "getChatOverview => " + e.toString())
+
+		}
+
+		return ret;
+	}
+
+
+	/**
+	 * Einträge aus einem Chat liefern
+	 */
+	public  fun getChatItems(chatId : String) : List<ChatItem>
+	{
+		var ret = mutableListOf<ChatItem>()
+
+		try {
+
+			val chatItems = db.getMessagesForChat(chatId)
+
+			if (chatItems != null) {
+				for(item in chatItems) {
+					ret.add(item)
+				}
+			} else {
+				Log.e(TAG, "getChatItems => no data for Chat" )
+			}
+		}
+		catch (e: Exception)
+		{
+			Log.e(TAG, "getChatItems => " + e.toString())
 
 		}
 

@@ -1,5 +1,6 @@
 package com.tigerteam.ui.Objects
 
+import java.io.Serializable
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -9,7 +10,7 @@ data class ChatItem(
         , val messageDataType : String
         , val messageData : String
         , val messageTimeStamp : Date
-) {
+)  : Serializable  {
 
     public fun getDateInNiceFormat() : String
     {
