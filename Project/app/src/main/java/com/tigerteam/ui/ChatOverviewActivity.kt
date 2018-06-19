@@ -129,8 +129,9 @@ class ChatOverviewActivity : AppCompatActivity()
 
 		if(requestCode == 22 && grantResults.any{it == PackageManager.PERMISSION_DENIED} )
 		{
-			Log.e(TAG, "Exit because not getting Permission")
-			exitProcess(55);
+			Log.e(TAG, "Error because not getting Permission")
+			Toast.makeText(this, "Error because not getting Permission", Toast.LENGTH_LONG).show()
+			//exitProcess(55);
 		}
 	}
 

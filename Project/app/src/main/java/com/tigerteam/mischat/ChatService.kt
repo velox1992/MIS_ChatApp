@@ -153,11 +153,14 @@ class ChatService : Service()
 								ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
 								arrayOf(id), null)
 						while (pCur!!.moveToNext()) {
-							val phoneNo = pCur.getString(pCur.getColumnIndex(
+							var phoneNo = pCur.getString(pCur.getColumnIndex(
 									ContactsContract.CommonDataKinds.Phone.NUMBER))
 
 							Log.d(TAG, "Name: $name")
 							Log.d(TAG, "Phone Number: $phoneNo")
+
+							// scheinbar hat die Telefonnummer manchmal leerzeichen
+							phoneNo = phoneNo.replace(" ", "")
 
 							ret.add(Contact(name, phoneNo))
 						}
