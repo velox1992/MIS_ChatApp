@@ -21,8 +21,7 @@
     <View
         android:id="@+id/view"
         android:layout_width="0dp"
-        android:layout_height="2dp"
-        android:background="#dfdfdf"
+        android:layout_height="6dp"
         app:layout_constraintBottom_toTopOf="@+id/layout_chatbox"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent" />

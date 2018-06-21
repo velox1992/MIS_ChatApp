@@ -18,6 +18,7 @@
         android:text="@string/nickname"
         app:layout_constraintBottom_toTopOf="@+id/txbNickName"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.501"
         app:layout_constraintStart_toStartOf="parent" />
 
     <EditText
@@ -26,21 +27,26 @@
         android:layout_height="wrap_content"
         android:ems="10"
         android:hint="Nickname"
+        android:imeOptions="actionDone"
         android:inputType="textPersonName"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.502"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        android:imeOptions="actionDone"/>
+        app:layout_constraintVertical_bias="0.432" />
 
     <Button
         android:id="@+id/btnLetsStart"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
         android:layout_marginTop="8dp"
         android:onClick="btnLetsStart_onClick"
         android:text="@string/los_gehts"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/txbNickName" />
+        app:layout_constraintTop_toBottomOf="@+id/txbNickName"
+        app:layout_constraintVertical_bias="0.0" />
 </android.support.constraint.ConstraintLayout>

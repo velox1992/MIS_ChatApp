@@ -8,6 +8,12 @@ class Constants
 {
 	companion object
 	{
+		//Text-Nachrichten-Typ
+		const val MESSAGE_TYPE_TEXT = "text"
+
+
+
+
 		const val EXTRA_USER_NAME : String = "user_name"
 
 		const val PARAM_OWN_USER_ID : String = "own_user_id"
@@ -20,10 +26,15 @@ class Constants
 		const  val EXTRA_CHAT_USERS : String = "chat_users"
 
 		// Chat
-		const val EXTRA_CHAT_ITEMS : String = "chat_items"
-		const val EXTRA_OWN_USER_ID : String = "own_user_id"
-		const val EXTRA_CHAT_TITLE : String = "chat_title"
-		const val EXTRA_CHAT_ID : String = "chat_id"
+		const  val EXTRA_CHAT_ITEMS : String = "chat_items"
+		const  val EXTRA_OWN_USER_ID : String = "own_user_id"
+		const  val EXTRA_CHAT_TITLE : String = "chat_title"
+		const  val EXTRA_CHAT_ID : String  = "chat_id"
 
+		// Communication
+        const val HANDLER_CODE_NEW_CLIENT_MESSAGE = 1
+        const val HANDLER_CODE_CLIENT_ROLE_DETERMINED = 2
+        const val HANDLER_CODE_SERVER_ROLE_DETERMINED = 3
+        const val HANDLER_CODE_REGEGISTER_RECEIVER = 4
 	}
 }

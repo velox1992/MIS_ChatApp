@@ -109,8 +109,8 @@ class ChatOverviewActivity : AppCompatActivity()
 		// Permissions holen
 		var neededPermissions = mutableListOf<String>()
 
-		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_NUMBERS) != PackageManager.PERMISSION_GRANTED) {
-			neededPermissions.add(Manifest.permission.READ_PHONE_NUMBERS)
+		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+			neededPermissions.add(Manifest.permission.READ_PHONE_STATE)
 		}
 
 		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
@@ -144,6 +144,11 @@ class ChatOverviewActivity : AppCompatActivity()
 	override fun onResume()
 	{
 		super.onResume()
+
+		// Chats aktualisieren
+		if(isChatServiceBound) {
+			showMyChats()
+		}
 	}
 
 	override fun onDestroy()
@@ -239,26 +244,31 @@ class ChatOverviewActivity : AppCompatActivity()
 
 
 	fun showMyChats(){
-		val chatOverviewITems = chatService!!.getChatOverview()
+		if(isChatServiceBound) {
+			val chatOverviewITems = chatService!!.getChatOverview()
 
-		viewManager = LinearLayoutManager(this)
+			viewManager = LinearLayoutManager(this)
 
-		viewAdapter = ChatOverviewRecyclerAdapter(chatOverviewITems, chatClickListener)
+			viewAdapter = ChatOverviewRecyclerAdapter(chatOverviewITems, chatClickListener)
 
 
-		recyclerView = findViewById<RecyclerView>(R.id.recycler_view).apply {
-			// use this setting to improve performance if you know that changes
-			// in content do not change the layout size of the RecyclerView
-			setHasFixedSize(true)
+			recyclerView = findViewById<RecyclerView>(R.id.recycler_view).apply {
+				// use this setting to improve performance if you know that changes
+				// in content do not change the layout size of the RecyclerView
+				setHasFixedSize(true)
 
-			// use a linear layout manager
-			layoutManager = viewManager
+				// use a linear layout manager
+				layoutManager = viewManager
 
-			// specify an viewAdapter (see also next example)
-			adapter = viewAdapter
+				// specify an viewAdapter (see also next example)
+				adapter = viewAdapter
 
-			// vertical Dividing-Lines
-			addItemDecoration(DividerItemDecoration(context, LinearLayoutManager.VERTICAL))
+				// vertical Dividing-Lines
+				addItemDecoration(DividerItemDecoration(context, LinearLayoutManager.VERTICAL))
+			}
+		}
+		else{
+			Log.e(TAG, "showMyChats => ChatService is not bound")
 		}
 	}
 
@@ -280,7 +290,7 @@ class ChatOverviewActivity : AppCompatActivity()
 		if(ownUserId != null) {
 			val intent = Intent(this, ChatActivity::class.java)
 			intent.putExtra(Constants.EXTRA_CHAT_ITEMS, ArrayList(chatItems))
-			intent.putExtra(Constants.EXTRA_OWN_USER_ID, ownUserId.value)
+			intent.putExtra(Constants.EXTRA_OWN_USER_ID, ownUserId)
 			intent.putExtra(Constants.EXTRA_CHAT_TITLE, chatName)
 			intent.putExtra(Constants.EXTRA_CHAT_ID, chatId)
 			startActivity(intent)

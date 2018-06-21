@@ -5,7 +5,10 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.IBinder
 import android.support.v4.content.LocalBroadcastManager
-import android.support.v7.widget.DividerItemDecoration
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
@@ -15,10 +18,12 @@ import com.tigerteam.mischat.Constants
 import com.tigerteam.mischat.R
 import com.tigerteam.ui.Objects.ChatItem
 import com.tigerteam.ui.helper.ChatRecyclerAdapter
+import kotlinx.android.synthetic.main.activity_chat.*
 import java.util.*
 import kotlinx.android.synthetic.main.activity_chat.*
 import android.widget.Toast
 import com.tigerteam.intent.UpdateUIIntent
+import com.tigerteam.mischat.R.id.edittext_chatbox
 
 
 class ChatActivity : AppCompatActivity()
@@ -102,6 +107,9 @@ class ChatActivity : AppCompatActivity()
 
 		//----
 		val viewManager = LinearLayoutManager(this)
+		// Scroll zum letzten
+		viewManager.stackFromEnd = true
+
 		viewAdapter = ChatRecyclerAdapter(ownUserId)
 		recyclerView = findViewById<RecyclerView>(R.id.reyclerview_message_list).apply {
 			// use this setting to improve performance if you know that changes
@@ -148,6 +156,10 @@ class ChatActivity : AppCompatActivity()
 	fun button_chatbox_send_clicked(view : View)
 	{
 		val message : String = edittext_chatbox.text.toString()
+		if(message.isNullOrBlank())
+		{
+			return
+		}
 
 		chatService!!.sendMessage(chatId, message)
 		edittext_chatbox.setText("")
@@ -162,7 +174,7 @@ class ChatActivity : AppCompatActivity()
 	{
 		val chatItems = chatService!!.getChatItems(chatId)
 
-		(viewAdapter as ChatRecyclerAdapter).updateData(chatItems)
+		viewAdapter.updateData(chatItems)
 		viewAdapter.notifyDataSetChanged()
 	}
 }
