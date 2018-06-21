@@ -109,8 +109,8 @@ class ChatOverviewActivity : AppCompatActivity()
 		// Permissions holen
 		var neededPermissions = mutableListOf<String>()
 
-		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_NUMBERS) != PackageManager.PERMISSION_GRANTED) {
-			neededPermissions.add(Manifest.permission.READ_PHONE_NUMBERS)
+		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+			neededPermissions.add(Manifest.permission.READ_PHONE_STATE)
 		}
 
 		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {

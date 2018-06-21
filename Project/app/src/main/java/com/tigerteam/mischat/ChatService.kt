@@ -105,7 +105,7 @@ class ChatService : Service()
 		{
 			var phoneNumber : String? = null
 			val tMgr = this.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-			if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_NUMBERS) == PackageManager.PERMISSION_GRANTED) {
+			if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
 				phoneNumber = tMgr.line1Number
 			}
 			else{
