@@ -20,9 +20,10 @@ class Constants
 		const  val EXTRA_CHAT_USERS : String = "chat_users"
 
 		// Chat
-		const  val EXTRA_CHAT_ITEMS : String = "chat_items"
-		const  val EXTRA_OWN_USER_ID : String = "own_user_id"
-		const  val EXTRA_CHAT_TITLE : String = "chat_title"
+		const val EXTRA_CHAT_ITEMS : String = "chat_items"
+		const val EXTRA_OWN_USER_ID : String = "own_user_id"
+		const val EXTRA_CHAT_TITLE : String = "chat_title"
+		const val EXTRA_CHAT_ID : String = "chat_id"
 
 	}
 }

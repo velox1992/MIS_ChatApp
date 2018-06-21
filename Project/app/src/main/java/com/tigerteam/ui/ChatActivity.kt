@@ -1,87 +1,168 @@
 package com.tigerteam.ui
 
+import android.content.*
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.os.IBinder
+import android.support.v4.content.LocalBroadcastManager
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
+import android.view.View
+import com.tigerteam.mischat.ChatService
 import com.tigerteam.mischat.Constants
 import com.tigerteam.mischat.R
 import com.tigerteam.ui.Objects.ChatItem
 import com.tigerteam.ui.helper.ChatRecyclerAdapter
 import java.util.*
-
-class ChatActivity : AppCompatActivity() {
-
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var viewAdapter: RecyclerView.Adapter<*>
-    private lateinit var viewManager: RecyclerView.LayoutManager
-
-    private lateinit var chatItems : List<ChatItem>
-    private lateinit var ownUserId : String
+import kotlinx.android.synthetic.main.activity_chat.*
+import android.widget.Toast
+import com.tigerteam.intent.UpdateUIIntent
 
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_chat)
+class ChatActivity : AppCompatActivity()
+{
+	//----------------------------------------------------------------------------------------------
+	// Const Variables
+	//----------------------------------------------------------------------------------------------
+
+	private val TAG = "ChatActivity"
 
 
-        val extras = intent.extras
+	//----------------------------------------------------------------------------------------------
+	// Variables
+	//----------------------------------------------------------------------------------------------
 
-        if(extras == null)
-        {
-            Log.e("ChatActivity", "Error: Started without Extras in Intent! ")
-            return
-        }
+	private var chatService: ChatService? = null
+	private var isChatServiceBound = false
 
-        val obj = extras.get(Constants.EXTRA_CHAT_ITEMS)
-        if(obj == null)
-        {
-            Log.e("ChatActivity", "Error: Missing Data in Extras (obj)! ")
-        }
+	private val chatServiceConnection = object : ServiceConnection
+	{
+		override fun onServiceConnected(name: ComponentName?, service: IBinder?)
+		{
+			Log.i(TAG, "onServiceConnected")
+			val binder = service as ChatService.ChatServiceBinder
+			chatService = binder.getService()
+			isChatServiceBound = true
 
-        val ownUserId = extras.getString(Constants.EXTRA_OWN_USER_ID)
-        if(ownUserId == null)
-        {
-            Log.e("ChatActivity", "Error: Missing Data in Extras (ownUserId)! ")
-        }
+			//----
+			updateViewAdapter()
+		}
 
-        val title = extras.getString(Constants.EXTRA_CHAT_TITLE)
-        if(title != null) {
-            this.title = title
-        }
+		override fun onServiceDisconnected(name: ComponentName)
+		{
+			Log.i(TAG, "onServiceDisconnected")
+			chatService = null
+			isChatServiceBound = false
+		}
+	}
 
-        /*
-        val demoData = mutableListOf<ChatItem>()
-        demoData.add(ChatItem("456", "Peter", "String", "Du Nudel!", Date()))
-        demoData.add(ChatItem("12", "Ich", "String", "NEIN!", Date()))
-        demoData.add(ChatItem("456", "Klaus", "String", "Haha lol!", Date()))
-        demoData.add(ChatItem("12", "Ich", "String", "Selber Handtuch!", Date()))
-        */
+	private val broadcastReceiver = object : BroadcastReceiver()
+	{
+		override fun onReceive(context: Context, intent: Intent)
+		{
+			Log.d(TAG, "onReceive")
 
-        chatItems = (obj as ArrayList<ChatItem>).toList()
+			if(intent is UpdateUIIntent)
+			{
+				updateViewAdapter()
+			}
+		}
+	}
+	private val intentFilter : IntentFilter = IntentFilter()
+
+	private lateinit var chatId : String
+
+	private lateinit var recyclerView: RecyclerView
+	private lateinit var viewAdapter: ChatRecyclerAdapter
 
 
-        viewManager = LinearLayoutManager(this)
+	//----------------------------------------------------------------------------------------------
+	// Overridden Methods
+	//----------------------------------------------------------------------------------------------
 
-        viewAdapter = ChatRecyclerAdapter(chatItems, ownUserId)
+	override fun onCreate(savedInstanceState: Bundle?)
+	{
+		super.onCreate(savedInstanceState)
+		setContentView(R.layout.activity_chat)
 
-        val context = this
+		// Bind to service to get the service API-Object
+		val chatIntent = Intent(this, ChatService::class.java)
+		bindService(chatIntent, chatServiceConnection, Context.BIND_AUTO_CREATE)
 
-        recyclerView = findViewById<RecyclerView>(R.id.reyclerview_message_list).apply {
-            // use this setting to improve performance if you know that changes
-            // in content do not change the layout size of the RecyclerView
-            setHasFixedSize(true)
+		//----
+		intentFilter.addAction(UpdateUIIntent().action)
 
-            // use a linear layout manager
-            layoutManager = viewManager
+		//----
+		val extras = intent.extras
+		val ownUserId = extras.getString(Constants.EXTRA_OWN_USER_ID)
+		this.title = extras.getString(Constants.EXTRA_CHAT_TITLE)
+		this.chatId = extras.getString(Constants.EXTRA_CHAT_ID)
 
-            // specify an viewAdapter (see also next example)
-            adapter = viewAdapter
+		//----
+		val viewManager = LinearLayoutManager(this)
+		viewAdapter = ChatRecyclerAdapter(ownUserId)
+		recyclerView = findViewById<RecyclerView>(R.id.reyclerview_message_list).apply {
+			// use this setting to improve performance if you know that changes
+			// in content do not change the layout size of the RecyclerView
+			setHasFixedSize(true)
 
-            // vertical Dividing-Lines
-            //addItemDecoration(DividerItemDecoration(context, LinearLayoutManager.VERTICAL))
-        }
-    }
+			// use a linear layout manager
+			layoutManager = viewManager
+
+			// specify an viewAdapter (see also next example)
+			adapter = viewAdapter
+
+			// vertical Dividing-Lines
+			//addItemDecoration(DividerItemDecoration(context, LinearLayoutManager.VERTICAL))
+		}
+	}
+
+	override fun onDestroy()
+	{
+		unbindService(chatServiceConnection)
+
+		super.onDestroy()
+	}
+
+	override fun onResume()
+	{
+		super.onResume()
+
+		LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, intentFilter)
+	}
+
+	override fun onPause()
+	{
+		LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver)
+
+		super.onPause()
+	}
+
+
+	//----------------------------------------------------------------------------------------------
+	// Event Handler Methods
+	//----------------------------------------------------------------------------------------------
+
+	fun button_chatbox_send_clicked(view : View)
+	{
+		val message : String = edittext_chatbox.text.toString()
+
+		chatService!!.sendMessage(chatId, message)
+		edittext_chatbox.setText("")
+	}
+
+
+	//----------------------------------------------------------------------------------------------
+	// Methods
+	//----------------------------------------------------------------------------------------------
+
+	fun updateViewAdapter()
+	{
+		val chatItems = chatService!!.getChatItems(chatId)
+
+		(viewAdapter as ChatRecyclerAdapter).updateData(chatItems)
+		viewAdapter.notifyDataSetChanged()
+	}
 }

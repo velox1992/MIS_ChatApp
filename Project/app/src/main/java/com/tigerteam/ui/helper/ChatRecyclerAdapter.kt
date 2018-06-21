@@ -8,123 +8,129 @@ import android.widget.TextView
 import com.tigerteam.mischat.R
 import com.tigerteam.ui.Objects.ChatItem
 
-class ChatRecyclerAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    private val VIEW_TYPE_MESSAGE_SENT = 1
-    private val VIEW_TYPE_MESSAGE_RECEIVED = 2
+class ChatRecyclerAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>
+{
+	private val VIEW_TYPE_MESSAGE_SENT = 1
+	private val VIEW_TYPE_MESSAGE_RECEIVED = 2
 
-    private lateinit var itemsList : List<ChatItem>
-    private val myUserId : String
-
-
-    constructor(items : List<ChatItem>, myId : String) : super()
-    {
-        itemsList = items
-        myUserId = myId
-    }
-
-    inner class ViewHolderSend(itemView: View) : RecyclerView.ViewHolder(itemView)
-    {
-        var messageText : TextView
-        var timeText : TextView
-
-        init
-        {
-            messageText = itemView.findViewById<View>(R.id.text_message_body) as TextView
-            timeText = itemView.findViewById<View>(R.id.text_message_time) as TextView
-        }
-
-        fun bind(item : ChatItem)
-        {
-            messageText.text = item.messageData
-            timeText.text = item.getDateInNiceFormat()
-        }
-    }
-
-    inner class ViewHolderReceive(itemView: View) : RecyclerView.ViewHolder(itemView)
-    {
-        var messageText : TextView
-        var timeText : TextView
-        var nameText : TextView
-
-        init
-        {
-            messageText = itemView.findViewById<View>(R.id.text_message_body) as TextView
-            timeText = itemView.findViewById<View>(R.id.text_message_time) as TextView
-            nameText = itemView.findViewById<View>(R.id.text_message_name) as TextView
-        }
-
-        fun bind(item : ChatItem)
-        {
-            messageText.text = item.messageData
-            timeText.text = item.getDateInNiceFormat()
-            nameText.text = item.userName
-        }
-    }
+	private lateinit var itemsList : List<ChatItem>
+	private val myUserId : String
 
 
-    /**
-     * Typ-Unterscheidung
-     */
-    override fun getItemViewType(position: Int): Int {
-        val message = itemsList.get(position) as ChatItem
+	constructor(myid : String) : super()
+	{
+		itemsList = emptyList<ChatItem>()
+		myUserId = myid
+	}
 
-        return if (message.userId.equals(myUserId)) {
-            // If the current user is the sender of the message
-            VIEW_TYPE_MESSAGE_SENT
-        } else {
-            // If some other user sent the message
-            VIEW_TYPE_MESSAGE_RECEIVED
-        }
-    }
+	inner class ViewHolderSend(itemView: View) : RecyclerView.ViewHolder(itemView)
+	{
+		var messageText : TextView
+		var timeText : TextView
+
+		init
+		{
+			messageText = itemView.findViewById<View>(R.id.text_message_body) as TextView
+			timeText = itemView.findViewById<View>(R.id.text_message_time) as TextView
+		}
+
+		fun bind(item : ChatItem)
+		{
+			messageText.text = item.messageData
+			timeText.text = item.getDateInNiceFormat()
+		}
+	}
+
+	inner class ViewHolderReceive(itemView: View) : RecyclerView.ViewHolder(itemView)
+	{
+		var messageText : TextView
+		var timeText : TextView
+		var nameText : TextView
+
+		init
+		{
+			messageText = itemView.findViewById<View>(R.id.text_message_body) as TextView
+			timeText = itemView.findViewById<View>(R.id.text_message_time) as TextView
+			nameText = itemView.findViewById<View>(R.id.text_message_name) as TextView
+		}
+
+		fun bind(item : ChatItem)
+		{
+			messageText.text = item.messageData
+			timeText.text = item.getDateInNiceFormat()
+			nameText.text = item.userName
+		}
+	}
 
 
-    //
-    // This method will be called by the RecyclerView to obtain a ViewHolder object. It inflates
-    // the view hierarchy card_layout.xml file and creates an instance of our ViewHolder class
-    // initialized with the view hierarchy before returning it to the RecyclerView.
-    //
-    override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): RecyclerView.ViewHolder
-    {
-        var ret: RecyclerView.ViewHolder
+	/**
+	 * Typ-Unterscheidung
+	 */
+	override fun getItemViewType(position: Int): Int {
+		val message = itemsList.get(position) as ChatItem
 
-        if (viewType === VIEW_TYPE_MESSAGE_SENT)
-        {
-            val view = LayoutInflater.from(viewGroup.context)
-                    .inflate(R.layout.item_message_sent, viewGroup, false)
-            ret =  ViewHolderSend(view)
-        } else
-        {
-            val view = LayoutInflater.from(viewGroup.context)
-                    .inflate(R.layout.item_message_received, viewGroup, false)
-            ret = ViewHolderReceive(view)
-        }
+		return if (message.userId.equals(myUserId)) {
+			// If the current user is the sender of the message
+			VIEW_TYPE_MESSAGE_SENT
+		} else {
+			// If some other user sent the message
+			VIEW_TYPE_MESSAGE_RECEIVED
+		}
+	}
 
 
-        return ret
-    }
+	//
+	// This method will be called by the RecyclerView to obtain a ViewHolder object. It inflates
+	// the view hierarchy card_layout.xml file and creates an instance of our ViewHolder class
+	// initialized with the view hierarchy before returning it to the RecyclerView.
+	//
+	override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): RecyclerView.ViewHolder
+	{
+		var ret: RecyclerView.ViewHolder
 
-    //
-    // The purpose of the onBindViewHolder() method is to populate the view hierarchy within the
-    // ViewHolder object with the data to be displayed.
-    //
-    override fun onBindViewHolder(viewHolder: RecyclerView.ViewHolder, position: Int)
-    {
-        val message = itemsList.get(position) as ChatItem
+		if (viewType === VIEW_TYPE_MESSAGE_SENT)
+		{
+			val view = LayoutInflater.from(viewGroup.context)
+					.inflate(R.layout.item_message_sent, viewGroup, false)
+			ret =  ViewHolderSend(view)
+		} else
+		{
+			val view = LayoutInflater.from(viewGroup.context)
+					.inflate(R.layout.item_message_received, viewGroup, false)
+			ret = ViewHolderReceive(view)
+		}
 
-        when (viewHolder.getItemViewType()) {
-            VIEW_TYPE_MESSAGE_SENT ->
-            {
-                (viewHolder as ViewHolderSend).bind(message)
-            }
-            VIEW_TYPE_MESSAGE_RECEIVED ->
-            {
-                (viewHolder as ViewHolderReceive).bind(message)
-            }
-        }
-    }
 
-    override fun getItemCount(): Int
-    {
-        return itemsList.size
-    }
+		return ret
+	}
+
+	//
+	// The purpose of the onBindViewHolder() method is to populate the view hierarchy within the
+	// ViewHolder object with the data to be displayed.
+	//
+	override fun onBindViewHolder(viewHolder: RecyclerView.ViewHolder, position: Int)
+	{
+		val message = itemsList.get(position) as ChatItem
+
+		when (viewHolder.getItemViewType()) {
+			VIEW_TYPE_MESSAGE_SENT ->
+			{
+				(viewHolder as ViewHolderSend).bind(message)
+			}
+			VIEW_TYPE_MESSAGE_RECEIVED ->
+			{
+				(viewHolder as ViewHolderReceive).bind(message)
+			}
+		}
+	}
+
+	override fun getItemCount(): Int
+	{
+		return itemsList.size
+	}
+
+	public fun updateData(items : List<ChatItem>)
+	{
+		itemsList = items
+	}
 }

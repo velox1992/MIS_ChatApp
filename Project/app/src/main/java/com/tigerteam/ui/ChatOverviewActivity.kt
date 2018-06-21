@@ -282,6 +282,7 @@ class ChatOverviewActivity : AppCompatActivity()
 			intent.putExtra(Constants.EXTRA_CHAT_ITEMS, ArrayList(chatItems))
 			intent.putExtra(Constants.EXTRA_OWN_USER_ID, ownUserId.value)
 			intent.putExtra(Constants.EXTRA_CHAT_TITLE, chatName)
+			intent.putExtra(Constants.EXTRA_CHAT_ID, chatId)
 			startActivity(intent)
 		}
 		else

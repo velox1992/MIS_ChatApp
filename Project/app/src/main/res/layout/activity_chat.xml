@@ -57,6 +57,7 @@
             android:layout_gravity="bottom"
             android:clickable="true"
             android:gravity="center"
+            android:onClick="button_chatbox_send_clicked"
             android:text="Senden"
             android:textSize="14dp" />
 

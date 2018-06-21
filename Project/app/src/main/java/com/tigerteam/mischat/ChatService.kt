@@ -17,6 +17,8 @@ import android.telephony.TelephonyManager
 import com.tigerteam.ui.Objects.Contact
 import android.provider.ContactsContract
 import android.content.ContentResolver
+import android.support.v4.content.LocalBroadcastManager
+import com.tigerteam.intent.UpdateUIIntent
 import com.tigerteam.ui.Objects.ChatItem
 import com.tigerteam.ui.Objects.ChatOverviewItem
 
@@ -330,6 +332,24 @@ class ChatService : Service()
 		}
 
 		return ret;
+	}
+
+	public fun sendMessage(chatId : String, message : String)
+	{
+		val ownUserId = getOwnUserId()
+		val uuidNewMessage = UUID.randomUUID().toString()
+		val chatMessage = ChatMessage(uuidNewMessage, Date(), "text", message, ownUserId!!.value, chatId)
+
+		try
+		{
+			db.upsertMessage(chatMessage)
+
+			LocalBroadcastManager.getInstance(this).sendBroadcast(UpdateUIIntent());
+		}
+		catch (e: Exception)
+		{
+			Log.e(TAG, "sendMessage => " + e.toString())
+		}
 	}
 
 
