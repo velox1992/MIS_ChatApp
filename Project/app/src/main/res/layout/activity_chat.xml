@@ -57,6 +57,7 @@
             android:layout_gravity="bottom"
             android:clickable="true"
             android:gravity="center"
+            android:onClick="sendMessageButtonClick"
             android:text="Senden"
             android:textSize="14dp" />
 

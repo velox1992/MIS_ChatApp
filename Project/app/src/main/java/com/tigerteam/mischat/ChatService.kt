@@ -241,13 +241,13 @@ class ChatService : Service()
 			}
 
 			// den Ersteller nicht vergessen
-			var ownUserIdParam = getOwnUserId()
-			if(ownUserIdParam != null) {
-				var chatUser = ChatUser(chat.id, ownUserIdParam!!.value, true)
+			var ownUserId = getOwnUserId()
+			if(ownUserId != null) {
+				var chatUser = ChatUser(chat.id, ownUserId, true)
 				db.upsertChatUser(chatUser)
 			}
 			else {
-				Log.e(TAG, "missing own userId")
+				Log.e(TAG, "CreateChat => missing own userId")
 			}
 		}
 		catch (e: Exception)
@@ -260,11 +260,15 @@ class ChatService : Service()
 	/**
 	 * liefert die eigenen User-Id
 	 */
-	public fun getOwnUserId() : Parameter?
+	public fun getOwnUserId() : String?
 	{
-		var ret : Parameter? = null
+		var ret : String? = null
 		try {
-			ret = db.getParameter(Constants.PARAM_OWN_USER_ID)
+			val param = db.getParameter(Constants.PARAM_OWN_USER_ID)
+			if(param != null)
+			{
+				ret = param.value
+			}
 		}
 		catch (e: Exception)
 		{
@@ -326,13 +330,36 @@ class ChatService : Service()
 		catch (e: Exception)
 		{
 			Log.e(TAG, "getChatItems => " + e.toString())
-
 		}
 
 		return ret;
 	}
 
 
+	/**
+	 * Eine Nachricht in einem Chat versenden
+	 * (-> Insert in die Datenbank)
+	 */
+	public fun sendChatTextMessage(chatId : String, text : String)
+	{
+		try{
+			val ownUserId = getOwnUserId()
+			if(ownUserId != null) {
+				val msgID = UUID.randomUUID().toString();
+				val msg = ChatMessage(msgID, Date(), Constants.MESSAGE_TYPE_TEXT, text,ownUserId , chatId)
+
+				db.upsertMessage(msg)
+			}
+			else
+			{
+				Log.e(TAG, "sendChatMessage => missing own userId")
+			}
+		}
+		catch (e : Exception)
+		{
+			Log.e(TAG, "sendChatMessage => " + e.toString())
+		}
+	}
 
 
 
@@ -351,54 +378,58 @@ class ChatService : Service()
 
 	public fun fillSomeTestData()
 	{
-		// diese nummer im Telefonbuch des Test-Gerätes einfügen:
-		val numberother = "015152222222"
+        // nur einmal einfügen
+        if(db.getAllChats().size == 0) {
+            // diese nummer im Telefonbuch des Test-Gerätes einfügen:
+            val numberother = "015152222222"
 
-		var me = db.getUser(db.getParameter(Constants.PARAM_OWN_USER_ID)!!.value)!!
-		var other = User("2222", "Lulatsch", numberother)
-		db.upsertUser(other)
+            var me = db.getUser(db.getParameter(Constants.PARAM_OWN_USER_ID)!!.value)!!
+            var other = User("2222", "Lulatsch", numberother)
+            db.upsertUser(other)
 
-		val ownUserId = Parameter(Constants.PARAM_OWN_USER_ID, "String", me.id)
-		db.upsertParameter(ownUserId)
+            val ownUserId = Parameter(Constants.PARAM_OWN_USER_ID, "String", me.id)
+            db.upsertParameter(ownUserId)
 
-		var chat = Chat("0000", "Cooler Chat")
-		db.upsertChat(chat)
-		var chatUser1 = ChatUser(chat.id, me.id, true)
-		var chatUser2= ChatUser(chat.id, other.id, false)
-		db.upsertChatUser(chatUser1)
-		db.upsertChatUser(chatUser2)
+            var chat = Chat("0000", "Cooler Chat")
+            db.upsertChat(chat)
+            var chatUser1 = ChatUser(chat.id, me.id, true)
+            var chatUser2 = ChatUser(chat.id, other.id, false)
+            db.upsertChatUser(chatUser1)
+            db.upsertChatUser(chatUser2)
 
-		var msgMe = ChatMessage("1", Date(Date().time -100), "text", "Hallo", me.id, chat.id)
-		var msgOther = ChatMessage("2", Date(Date().time -50), "text", "Welt", other.id, chat.id)
+            var msgMe = ChatMessage("1", Date(Date().time - 100), Constants.MESSAGE_TYPE_TEXT, "Hallo", me.id, chat.id)
+            var msgOther = ChatMessage("2", Date(Date().time - 50), Constants.MESSAGE_TYPE_TEXT, "Welt", other.id, chat.id)
 
-		db.upsertMessage(msgMe)
-		db.upsertMessage(msgOther)
-
-
-
-
-		chat = Chat("0001", "Cooler Chat 2")
-		db.upsertChat(chat)
-		chatUser1 = ChatUser(chat.id, me.id, true)
-		chatUser2= ChatUser(chat.id, other.id, false)
-		db.upsertChatUser(chatUser1)
-		db.upsertChatUser(chatUser2)
-
-		msgMe = ChatMessage("10", Date(Date().time -100), "text", "Hallo", me.id, chat.id)
-		msgOther = ChatMessage("11", Date(), "text", "Welt 2", other.id, chat.id)
-
-		db.upsertMessage(msgMe)
-		db.upsertMessage(msgOther)
+            db.upsertMessage(msgMe)
+            db.upsertMessage(msgOther)
 
 
 
 
+            chat = Chat("0001", "Cooler Chat 2")
+            db.upsertChat(chat)
+            chatUser1 = ChatUser(chat.id, me.id, true)
+            chatUser2 = ChatUser(chat.id, other.id, false)
+            db.upsertChatUser(chatUser1)
+            db.upsertChatUser(chatUser2)
 
-		chat = Chat("0002", "Cooler Chat 3 ohne Message")
-		db.upsertChat(chat)
-		chatUser1 = ChatUser(chat.id, me.id, true)
-		chatUser2= ChatUser(chat.id, other.id, false)
-		db.upsertChatUser(chatUser1)
-		db.upsertChatUser(chatUser2)
+            msgMe = ChatMessage("10", Date(Date().time - 100), Constants.MESSAGE_TYPE_TEXT, "Hallo", me.id, chat.id)
+            msgOther = ChatMessage("11", Date(), Constants.MESSAGE_TYPE_TEXT, "Welt 2", other.id, chat.id)
+
+            db.upsertMessage(msgMe)
+            db.upsertMessage(msgOther)
+
+
+
+
+
+            chat = Chat("0002", "Cooler Chat 3 ohne Message")
+            db.upsertChat(chat)
+            chatUser1 = ChatUser(chat.id, me.id, true)
+            chatUser2 = ChatUser(chat.id, other.id, false)
+            db.upsertChatUser(chatUser1)
+            db.upsertChatUser(chatUser2)
+
+        }
 	}
 }
