@@ -176,5 +176,6 @@ class ChatActivity : AppCompatActivity()
 
 		viewAdapter.updateData(chatItems)
 		viewAdapter.notifyDataSetChanged()
+		recyclerView.scrollToPosition(chatItems.size - 1)
 	}
 }
