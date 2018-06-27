@@ -21,6 +21,8 @@ import android.support.v4.content.LocalBroadcastManager
 import com.tigerteam.intent.UpdateUIIntent
 import com.tigerteam.ui.Objects.ChatItem
 import com.tigerteam.ui.Objects.ChatOverviewItem
+import java.net.InetAddress
+import java.net.NetworkInterface
 
 
 class ChatService : Service()
@@ -46,6 +48,10 @@ class ChatService : Service()
 	//----------------------------------------------------------------------------------------------
 
 	private var db : IChatDbHelper = ChatDbHelper(this)
+	private var syncServer : Thread? = null
+	private var syncClient : Thread? = null
+
+	private var peerList : MutableList<InetAddress> = mutableListOf<InetAddress>()
 
 
 	//----------------------------------------------------------------------------------------------
@@ -61,6 +67,16 @@ class ChatService : Service()
 	override fun onCreate()
 	{
 		Log.i(TAG, "ChatService onCreate")
+
+		// TODO: Remove in final version
+		peerList.add(InetAddress.getLoopbackAddress())
+
+		//----
+		syncServer = Thread(com.tigerteam.sync.Server(this))
+		syncServer!!.start()
+
+		syncClient = Thread(com.tigerteam.sync.Client(this))
+		syncClient!!.start()
 	}
 
 	override fun onDestroy()
@@ -359,6 +375,97 @@ class ChatService : Service()
 		}
 	}
 
+	//
+	// Get possible connections to other phones.
+	//
+	public fun getPeers() : Queue<InetAddress>
+	{
+		return ArrayDeque<InetAddress>(peerList)
+	}
+
+	//
+	// Set possible connections to other phones.
+	//
+	public fun setPeers(newPeerList : MutableList<InetAddress>)
+	{
+		peerList = newPeerList
+	}
+
+	//
+	// Get all users from the database
+	//
+	public fun getAllUsers() : List<com.tigerteam.database.DbObjects.User>
+	{
+		var result : List<User> = mutableListOf<User>()
+
+		try
+		{
+			result = db.getAllUsers()
+		}
+		catch (e: Exception)
+		{
+			Log.e(TAG, "getAllUser => ${e.toString()} : ${e.message}")
+		}
+
+		return result
+	}
+
+	//
+	// Get all chats from the database
+	//
+	public fun getAllChats() : List<com.tigerteam.database.DbObjects.Chat>
+	{
+		var result : List<Chat> = mutableListOf<Chat>()
+
+		try
+		{
+			result = db.getAllChats()
+		}
+		catch (e: Exception)
+		{
+			Log.e(TAG, "getAllChats => ${e.toString()} : ${e.message}")
+		}
+
+		return result
+	}
+
+	//
+	// Get all ChatUsers from the database
+	//
+	public fun getAllChatUsers() : List<com.tigerteam.database.DbObjects.ChatUser>
+	{
+		var result : List<ChatUser> = mutableListOf<ChatUser>()
+
+		try
+		{
+			result = db.getAllChatUsers()
+		}
+		catch (e: Exception)
+		{
+			Log.e(TAG, "getAllChatUsers => ${e.toString()} : ${e.message}")
+		}
+
+		return result
+	}
+
+	//
+	// Get all ChatMessages from the database
+	//
+	public fun getAllChatMessages() : List<com.tigerteam.database.DbObjects.ChatMessage>
+	{
+		var result : List<ChatMessage> = mutableListOf<ChatMessage>()
+
+		try
+		{
+			result = db.getAllMessages()
+		}
+		catch (e: Exception)
+		{
+			Log.e(TAG, "getAllChatMessages => ${e.toString()} : ${e.message}")
+		}
+
+		return result
+	}
 
 
 

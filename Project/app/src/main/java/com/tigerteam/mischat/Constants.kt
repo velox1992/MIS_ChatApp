@@ -36,5 +36,8 @@ class Constants
         const val HANDLER_CODE_CLIENT_ROLE_DETERMINED = 2
         const val HANDLER_CODE_SERVER_ROLE_DETERMINED = 3
         const val HANDLER_CODE_REGEGISTER_RECEIVER = 4
+
+		// Sync
+		const val SYNC_SERVER_SOCKET_PORT = 7734
 	}
 }
