@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#ffa435</color>
-    <color name="colorPrimaryDark">#ffa435</color>
-    <color name="colorAccent">#f76e07</color>
-    <color name="myOrange">#ffa435</color>
+    <color name="colorPrimary">#ffa500</color>
+    <color name="colorSecundary">#e59400</color>
+
+    <color name="colorPrimaryDark">#e59400</color>
+    <color name="colorAccent">#e59400</color>
+    <color name="myOrange">#ffb732</color>
     <color name="myGrey">#d8d2d2</color>
 
 
