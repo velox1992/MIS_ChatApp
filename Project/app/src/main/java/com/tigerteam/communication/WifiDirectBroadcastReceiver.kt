@@ -9,6 +9,7 @@ import android.net.wifi.p2p.WifiP2pInfo
 import android.os.AsyncTask
 import android.os.Build
 import android.os.Parcelable
+import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.widget.ArrayAdapter
 import com.tigerteam.mischat.Constants
@@ -19,8 +20,8 @@ import com.tigerteam.mischat.MainActivity
  * A BroadcastReceiver that notifies of important Wi-Fi p2p events.
  */
 class WiFiDirectBroadcastReceiver(private val mManager: WifiP2pManager, private val mChannel: WifiP2pManager.Channel,
-                                  activity: MainActivity, peerListListener : WifiP2pManager.PeerListListener, val receivedMsgAdapater : ArrayAdapter<String>) : BroadcastReceiver() {
-    private var mActivity: MainActivity
+                                  activity: AppCompatActivity, peerListListener : WifiP2pManager.PeerListListener) : BroadcastReceiver() {
+    private var mActivity: AppCompatActivity
     private var myPeerListListener : WifiP2pManager.PeerListListener
 
     init {
@@ -69,7 +70,7 @@ class WiFiDirectBroadcastReceiver(private val mManager: WifiP2pManager, private 
                             // One common case is creating a group owner thread and accepting
                             // incoming connections.
                             Log.e("WifiBroadcastReceiver", "Starting the server thread")
-                            var server : ServerTask = ServerTask(context, receivedMsgAdapater)
+                            var server : ServerTask = ServerTask(context)
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
                                 server.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
                             else

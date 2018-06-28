@@ -12,7 +12,7 @@ import java.net.ServerSocket
 import java.net.Socket
 
 
-class ServerTask(val context : Context, val receivedMsgAdapater : ArrayAdapter<String>) : AsyncTask<Void, Void, Void?>() {
+class ServerTask(val context : Context) : AsyncTask<Void, Void, Void?>() {
 
     val TAG = "ServerTask"
     var serverSocket : ServerSocket? = null

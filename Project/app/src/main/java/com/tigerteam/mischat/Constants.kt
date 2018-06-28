@@ -32,12 +32,13 @@ class Constants
 		const  val EXTRA_CHAT_ID : String  = "chat_id"
 
 		// Communication
-        const val HANDLER_CODE_NEW_CLIENT_MESSAGE = 1
-        const val HANDLER_CODE_CLIENT_ROLE_DETERMINED = 2
-        const val HANDLER_CODE_SERVER_ROLE_DETERMINED = 3
-        const val HANDLER_CODE_REGEGISTER_RECEIVER = 4
+        const val EXTRA_DEVICES : String = "discovered_devices"
 
 		// Sync
 		const val SYNC_SERVER_SOCKET_PORT = 7734
+
+		// Intents
+		const val WIFI_CONNECT_TO_DEVICE : String = "wifi_connect_to_device"
+		const val EXTRA_SELECTED_WIFI_DEVICE : String = "selected_wifi_device"
 	}
 }
