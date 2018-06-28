@@ -27,6 +27,7 @@ class ChatDbHelper(context: Context)
     /**
      * Anlegen der Datenbankstruktur
      */
+    @Synchronized
     override fun onCreate(db: SQLiteDatabase?) {
         val method = "onCreate";
         WriteLog(Log.INFO, method,"start")
@@ -105,6 +106,7 @@ class ChatDbHelper(context: Context)
     /**
      * Funktion, wenn die Version angehoben wurde
      */
+    @Synchronized
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
         val method = "onUpgrade";
         WriteLog(Log.INFO, method,"start")
@@ -192,6 +194,7 @@ class ChatDbHelper(context: Context)
     /// END Companion Objekte
 
 
+    @Synchronized
     fun WriteLog(prio : Int, method: String, msg : String){
         Log.println(prio, TAG, method + ": " +msg)
     }
@@ -204,6 +207,7 @@ class ChatDbHelper(context: Context)
     /**
      * Aus Cursor Werte auslesen und ein Parameter-Objekt zurückliefern.
      */
+    @Synchronized
     private fun cursorToParameter(cursor: Cursor) : Parameter {
         val name = cursor.getString(0)
         val type = cursor.getString(1)
@@ -216,6 +220,7 @@ class ChatDbHelper(context: Context)
     /**
      * Parameter zu anhand des Namens lesen.
      */
+    @Synchronized
     override fun getParameter(name : String) : Parameter?{
         var param : Parameter? = null
 
@@ -237,6 +242,7 @@ class ChatDbHelper(context: Context)
      * Upsert (Update, sonst Insert) eines Parameters-Objektes.
      * Liefert True bei Insert, False bei Update.
      */
+    @Synchronized
     override fun upsertParameter(param : Parameter) : Boolean{
         val db = this.writableDatabase
 
@@ -261,6 +267,7 @@ class ChatDbHelper(context: Context)
     /**
      * Lösche einen Parameter anhand seines Namens.
      */
+    @Synchronized
     override fun deleteParameter(name: String) {
         val db = this.writableDatabase
         var affectedRows = db.delete(PARAMETERS_T, PARAMETERS_C_NAME + " = ?", arrayOf(name))
@@ -276,6 +283,7 @@ class ChatDbHelper(context: Context)
     /**
      * Aus Cursor Werte auslesen und ein User-Objekt zurückliefern.
      */
+    @Synchronized
     private fun cursorToUser(cursor: Cursor) : User {
         val id = cursor.getString(0)
         val name = cursor.getString(1)
@@ -289,6 +297,7 @@ class ChatDbHelper(context: Context)
     /**
      * Auslesen aller Benutzer.
      */
+    @Synchronized
     override fun getAllUsers(): List<User> {
         val ret = mutableListOf<User>()
 
@@ -312,6 +321,7 @@ class ChatDbHelper(context: Context)
     /**
      * User-Objekt anhand der ID selektieren
      */
+    @Synchronized
     override fun getUser(id: String): User? {
         var user : User? = null
 
@@ -334,6 +344,7 @@ class ChatDbHelper(context: Context)
      * Upsert (Update, sonst Insert) eines User-Objektes.
      * Liefert True bei Insert, False bei Update.
      */
+    @Synchronized
     override fun upsertUser(user: User) : Boolean {
         val db = this.writableDatabase
 
@@ -362,6 +373,7 @@ class ChatDbHelper(context: Context)
     /**
      * Aus Cursor Werte auslesen und ein User-Objekt zurückliefern.
      */
+    @Synchronized
     private fun cursorToChat(cursor: Cursor) : Chat {
         val id = cursor.getString(0)
         val name = cursor.getString(1)
@@ -374,6 +386,7 @@ class ChatDbHelper(context: Context)
     /**
      * Auslesen aller Chat-Objekte.
      */
+    @Synchronized
     override fun getAllChats(): List<Chat> {
         val ret = mutableListOf<Chat>()
 
@@ -399,6 +412,7 @@ class ChatDbHelper(context: Context)
      * Upsert (Update, sonst Insert) eines User-Objektes.
      * Liefert True bei Insert, False bei Update.
      */
+    @Synchronized
     override fun upsertChat(chat: Chat) : Boolean {
 
         val db = this.writableDatabase
@@ -429,6 +443,7 @@ class ChatDbHelper(context: Context)
     /**
      * Aus Cursor Werte auslesen und ein ChatUser-Objekt zurückliefern.
      */
+    @Synchronized
     private fun cursorToChatUser(cursor: Cursor) : ChatUser {
         val chatId = cursor.getString(0)
         val userId = cursor.getString(1)
@@ -442,6 +457,7 @@ class ChatDbHelper(context: Context)
     /**
      * Auslesen aller ChatUSer-Einträge.
      */
+    @Synchronized
     override fun getAllChatUsers(): List<ChatUser> {
         val ret = mutableListOf<ChatUser>()
 
@@ -467,6 +483,7 @@ class ChatDbHelper(context: Context)
      * Upsert (Update, sonst Insert) eines chatUser-Objektes.
      * Liefert True bei Insert, False bei Update.
      */
+    @Synchronized
     override fun upsertChatUser(chatUser: ChatUser) : Boolean {
         val db = this.writableDatabase
 
@@ -495,6 +512,7 @@ class ChatDbHelper(context: Context)
     /**
      * Aus Cursor Werte auslesen und ein Message-Objekt zurückliefern.
      */
+    @Synchronized
     private fun cursorToMessage(cursor: Cursor): ChatMessage  {
         val id = cursor.getString(0)
         val timeInMilliseconds =  cursor.getLong(1)
@@ -511,6 +529,7 @@ class ChatDbHelper(context: Context)
     /**
      * Auslesen aller Messages.
      */
+    @Synchronized
     override fun getAllMessages(): List<ChatMessage> {
         val ret = mutableListOf<ChatMessage>()
 
@@ -534,6 +553,7 @@ class ChatDbHelper(context: Context)
     /**
      * Liefert alle Nachrichten für einen bestimmten Zeitraum
      */
+    @Synchronized
     override fun getMessagesBetween(start: Date, end : Date) : List<ChatMessage>{
         val ret = mutableListOf<ChatMessage>()
 
@@ -557,6 +577,7 @@ class ChatDbHelper(context: Context)
     /**
      * Liefert alle Nachrichten für einen bestimmten Zeitraum nach Zeit sortiert. (Neuste zuletzt in Liste)
      */
+    @Synchronized
     override fun getMessagesBetweenOrderedByTime(start: Date, end: Date): List<ChatMessage> {
         var ret = listOf<ChatMessage>()
         val unOrdered = getMessagesBetween(start, end)
@@ -573,6 +594,7 @@ class ChatDbHelper(context: Context)
      * Upsert (Update, sonst Insert) eines Message-Objektes.
      * Liefert True bei Insert, False bei Update.
      */
+    @Synchronized
     override fun upsertMessage(msg: ChatMessage) : Boolean{
         val db = this.writableDatabase
 
@@ -616,6 +638,7 @@ class ChatDbHelper(context: Context)
     /**
      * Aus Cursor Werte auslesen und ein Hash-Objekt zurückliefern.
      */
+    @Synchronized
     private fun cursorToHash(cursor: Cursor): Hash  {
         val key = cursor.getString(0)
         val timeInMilliseconds =  cursor.getLong(1)
@@ -630,6 +653,7 @@ class ChatDbHelper(context: Context)
      * Upsert (Update, sonst Insert) eines Hash-Objektes.
      * Liefert True bei Insert, False bei Update.
      */
+    @Synchronized
     private fun UpsertHash(hash : Hash) : Boolean {
         val db = this.writableDatabase
 
@@ -654,6 +678,7 @@ class ChatDbHelper(context: Context)
     /**
      * Einträge in der Hash-Tabelle für einen Key lesen.
      */
+    @Synchronized
     private fun getHashesForKey(key : String): List<Hash> {
         val ret = mutableListOf<Hash>()
 
@@ -677,6 +702,7 @@ class ChatDbHelper(context: Context)
     /**
      * Alle Hashes für die Tabellen neu berechnen
      */
+    @Synchronized
     override fun recalculateAllHashes() {
         recalculateChatHash()
         recalculateChatHash()
@@ -687,6 +713,7 @@ class ChatDbHelper(context: Context)
     /**
      * Hash für die User-Tabelle aktualisieren
      */
+    @Synchronized
     override fun recalculateUserHash() {
         val allUsers = getAllUsers()
 
@@ -700,6 +727,7 @@ class ChatDbHelper(context: Context)
     /**
      * Hash für die Chat-Tabelle aktualisieren
      */
+    @Synchronized
     override fun recalculateChatHash() {
         val allChats = getAllChats()
 
@@ -713,6 +741,7 @@ class ChatDbHelper(context: Context)
     /**
      * Hash für die ChatUsers-Tabelle aktualisieren
      */
+    @Synchronized
     override fun recalculateChatUsersHash() {
         val allChatUsers = getAllChatUsers()
 
@@ -726,6 +755,7 @@ class ChatDbHelper(context: Context)
     /**
      * Hash für die Message-Tabelle aktualisieren
      */
+    @Synchronized
     override fun recalculateMessageHash() {
         val allMessages = getAllMessages()
 
@@ -745,6 +775,7 @@ class ChatDbHelper(context: Context)
     /**
      * User-Hash lesen
      */
+    @Synchronized
     override fun getUserHash() : String? {
         var ret : String? = null
 
@@ -759,6 +790,7 @@ class ChatDbHelper(context: Context)
     /**
      * Chat-Hash lesen
      */
+    @Synchronized
     override fun getChatHash() : String? {
         var ret : String? = null
 
@@ -773,6 +805,7 @@ class ChatDbHelper(context: Context)
     /**
      * ChatUsers-Hash lesen
      */
+    @Synchronized
     override fun getChatUsersHash() : String? {
         var ret : String? = null
 
@@ -787,6 +820,7 @@ class ChatDbHelper(context: Context)
     /**
      * Message-Hash lesen
      */
+    @Synchronized
     override fun getMessageHashes() : HashMap<Date, String> {
         var ret = HashMap<Date, String>()
 
@@ -816,6 +850,7 @@ class ChatDbHelper(context: Context)
      * Chat-Übersicht ist so sortiert, dass erstes Element der Chat mit der jüngsten Nachricht ist.
      * Achtung: Es muss in einem Chat keine letzte Nachricht geben!
      */
+    @Synchronized
     override fun getChatOverviewItems(): List<ChatOverviewItem>? {
         var ret : List<ChatOverviewItem>?  = null
 
@@ -874,6 +909,7 @@ class ChatDbHelper(context: Context)
     /**
      * Liefert die Nachrichten eines Chats in der Sortierung, dass die neuste Nachricht an letzter Stelle ist.
      */
+    @Synchronized
     override fun getMessagesForChat(chatId : String) : List<ChatItem> {
         var ret = mutableListOf<ChatItem>()
 
@@ -915,6 +951,7 @@ class ChatDbHelper(context: Context)
     /**
      * Liefert die Benutzer eines Chats (Owner immer als erstes selektiert)
      */
+    @Synchronized
     override fun getUsersForChat(chatId : String) : List<ChatUserItem>  {
         var ret = mutableListOf<ChatUserItem>()
 
@@ -953,6 +990,7 @@ class ChatDbHelper(context: Context)
     /**
      * Liefert alle Benutzer zu den übergebenen Telefonnummern
      */
+    @Synchronized
     override fun getUsersWithPhoneNumberIn(numbers: List<String>) : List<User> {
         val ret = mutableListOf<User>()
 
