@@ -32,7 +32,8 @@
 
         <activity
             android:name="com.tigerteam.ui.CreateChatActivity"
-            android:label="@string/title_activity_create_chat" />
+            android:label="@string/title_activity_create_chat"
+            android:parentActivityName="com.tigerteam.ui.ChatOverviewActivity"/>
         <activity
             android:name="com.tigerteam.ui.ChatOverviewActivity"
             android:label="@string/app_name"
@@ -43,7 +44,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.tigerteam.ui.ChatActivity" />
+        <activity
+            android:name="com.tigerteam.ui.ChatActivity"
+            android:parentActivityName="com.tigerteam.ui.ChatOverviewActivity" />
     </application>
 
 </manifest>
