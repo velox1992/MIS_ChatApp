@@ -12,15 +12,17 @@ import android.os.Parcelable
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.widget.ArrayAdapter
+import com.tigerteam.mischat.ChatService
 import com.tigerteam.mischat.Constants
 import com.tigerteam.mischat.MainActivity
+import java.net.InetAddress
 
 
 /**
  * A BroadcastReceiver that notifies of important Wi-Fi p2p events.
  */
 class WiFiDirectBroadcastReceiver(private val mManager: WifiP2pManager, private val mChannel: WifiP2pManager.Channel,
-                                  activity: AppCompatActivity, peerListListener : WifiP2pManager.PeerListListener) : BroadcastReceiver() {
+                                  activity: AppCompatActivity, peerListListener : WifiP2pManager.PeerListListener, val mChatService : ChatService) : BroadcastReceiver() {
     private var mActivity: AppCompatActivity
     private var myPeerListListener : WifiP2pManager.PeerListListener
 
@@ -70,7 +72,7 @@ class WiFiDirectBroadcastReceiver(private val mManager: WifiP2pManager, private 
                             // One common case is creating a group owner thread and accepting
                             // incoming connections.
                             Log.e("WifiBroadcastReceiver", "Starting the server thread")
-                            var server : ServerTask = ServerTask(context)
+                            var server : ServerTask = ServerTask(context, mChatService)
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
                                 server.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
                             else
@@ -81,6 +83,11 @@ class WiFiDirectBroadcastReceiver(private val mManager: WifiP2pManager, private 
                             // The other device acts as the peer (client). In this case,
                             // you'll want to create a peer thread that connects
                             // to the group owner.
+
+                            // ToDo Andere Module benachrichtigen, dass es keinen Kommnunikationspartner (den Gruppenbesitzer) gibt
+                            var hPeerAddresses : MutableList<InetAddress> = arrayListOf(groupOwnerAddress)
+                            mChatService.setPeers(hPeerAddresses)
+
                             Log.e("WifiBroadcastReceiver:", "Starting client thread")
                             var clientIp : String? = ClientClass.getLocalIpAddress()
                             val sender = ClientClass(groupOwnerAddress)

@@ -388,6 +388,7 @@ class ChatService : Service()
 	//
 	public fun setPeers(newPeerList : MutableList<InetAddress>)
 	{
+		Log.d(TAG, "Peers set: " + newPeerList.toString())
 		peerList = newPeerList
 	}
 

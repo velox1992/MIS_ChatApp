@@ -60,6 +60,7 @@ class ChatOverviewActivity : AppCompatActivity()
 
 			//----
 			startFirstUseActivity()
+            initializeCommunication()
 		}
 
 		override fun onServiceDisconnected(name: ComponentName)
@@ -162,22 +163,6 @@ class ChatOverviewActivity : AppCompatActivity()
 		}
 
 
-        // Register App with Wi-Fi P2P Framework and create Channel to connect the app with the Wi-Fi P2P Framework
-        // Außerdem den BroadcastReceiver erstellen um von Änderungen zu erfahren
-        mManager = getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
-        mChannel = mManager?.initialize(this, mainLooper, null)
-        mReceiver = WiFiDirectBroadcastReceiver(mManager!!, mChannel!!, this, peerListListener)
-
-        mIntentFilter = IntentFilter()
-        mIntentFilter?.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION)
-        mIntentFilter?.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION)
-        mIntentFilter?.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION)
-        mIntentFilter?.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION)
-
-
-        // Reagieren auf die Device-Auswahl in der Connect Activity
-        mChatOverviewBroadCastReceiver = ChatOverviewBroadCastReceiver()
-        registerReceiver(mChatOverviewBroadCastReceiver, IntentFilter(Constants.WIFI_CONNECT_TO_DEVICE))
     }
 
 	override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -211,6 +196,8 @@ class ChatOverviewActivity : AppCompatActivity()
         try {
             // Kommunikation wieder anschmeißen
             registerReceiver(mReceiver, mIntentFilter)
+
+
             // Start Peer-Discovery Thread
             mContiniousWifiDiscoveryTask = ContiniousWifiDiscoveryTask()
             mContiniousWifiDiscoveryThread = Thread(mContiniousWifiDiscoveryTask)
@@ -400,6 +387,30 @@ class ChatOverviewActivity : AppCompatActivity()
 		}
 	}
 
+    fun initializeCommunication() {
+        // Register App with Wi-Fi P2P Framework and create Channel to connect the app with the Wi-Fi P2P Framework
+        // Außerdem den BroadcastReceiver erstellen um von Änderungen zu erfahren
+        mManager = getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
+        mChannel = mManager?.initialize(this, mainLooper, null)
+
+
+        mReceiver = WiFiDirectBroadcastReceiver(mManager!!, mChannel!!, this, peerListListener, chatService!!)
+
+        mIntentFilter = IntentFilter()
+        mIntentFilter?.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION)
+        mIntentFilter?.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION)
+        mIntentFilter?.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION)
+        mIntentFilter?.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION)
+
+
+        // Reagieren auf die Device-Auswahl in der Connect Activity
+        mChatOverviewBroadCastReceiver = ChatOverviewBroadCastReceiver()
+        registerReceiver(mChatOverviewBroadCastReceiver, IntentFilter(Constants.WIFI_CONNECT_TO_DEVICE))
+
+        registerReceiver(mReceiver, mIntentFilter)
+    }
+
+
     fun startNearbyDevicesActivity() {
         val intent = Intent(this, NearbyDevices::class.java)
         intent.putExtra(Constants.EXTRA_DEVICES, peers)
@@ -419,10 +430,9 @@ class ChatOverviewActivity : AppCompatActivity()
         })
     }
 
-    fun connect(deviceIndex : Int) {
+    fun connect(device : WifiP2pDevice) {
         Log.d(TAG, "Connect to Peer")
 
-        val device = peers[deviceIndex]
 
         val config = WifiP2pConfig()
         config.deviceAddress = device.deviceAddress
@@ -453,6 +463,7 @@ class ChatOverviewActivity : AppCompatActivity()
             val extras = intent!!.extras
             val obj = extras.get(Constants.EXTRA_SELECTED_WIFI_DEVICE)
             var selectedDevice = obj as WifiP2pDevice
+            connect(selectedDevice)
         }
     }
 
@@ -480,5 +491,7 @@ class ChatOverviewActivity : AppCompatActivity()
             }
         }
     }
+
+
 
 }

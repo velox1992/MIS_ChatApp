@@ -24,13 +24,21 @@ class ClientClass(val serverAddress : InetAddress) : AsyncTask<String, Void, Voi
             connectToServer()
 
             // Behandlung der Server-Kommunikation in eigenem Thread
+            /*
             var serverHandlerThread = Thread(ServerListenerTask(client!!))
             serverHandlerThread.start()
+            */
 
-
+            // Sende eine Nachricht an den Server damit dieser die Adresse des Clients erfährt.
+            sendMessageToServer()
+            /*
             while (clientActive) {
                 sendMessageToServer()
             }
+            */
+
+            // Output Stream wird hier nicht mehr gebraucht
+            writer!!.close()
 
         }
         catch (e : IOException) {
@@ -51,10 +59,10 @@ class ClientClass(val serverAddress : InetAddress) : AsyncTask<String, Void, Voi
     }
 
     fun sendMessageToServer() {
-        writer!!.writeUTF(android.os.Build.MODEL + ": Eine Nachricht" + id + "\n")
+        writer!!.writeUTF(android.os.Build.MODEL + ": Hey, hier bin ich\n")
         writer!!.flush()
-        id++
-        Thread.sleep(2000)
+        //id++
+        //Thread.sleep(2000)
     }
 
     companion object {
