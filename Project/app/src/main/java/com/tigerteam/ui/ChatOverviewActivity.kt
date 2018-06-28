@@ -14,12 +14,15 @@ import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import com.tigerteam.mischat.ChatService
 import com.tigerteam.mischat.Constants
 import com.tigerteam.mischat.R
 import com.tigerteam.ui.Objects.CreateChatContact
+import com.tigerteam.ui.Objects.NearbyDevices
 import com.tigerteam.ui.helper.ChatOverviewRecyclerAdapter
 import com.tigerteam.ui.helper.IChatOverviewItemClickListener
 
@@ -193,6 +196,23 @@ class ChatOverviewActivity : AppCompatActivity()
 		super.onActivityResult(requestCode, resultCode, data)
 	}
 
+	override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+		val inflater = menuInflater
+		inflater.inflate(R.menu.main_menu, menu) //your file name
+		return super.onCreateOptionsMenu(menu)
+	}
+
+	override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+
+		when (item!!.getItemId()) {
+			R.id.action_settings -> {
+                startNearbyDevicesActivity()
+                return true
+            }
+			else -> return super.onOptionsItemSelected(item)
+		}
+	}
+
 
 	//----------------------------------------------------------------------------------------------
 	// Event Handler Methods
@@ -300,5 +320,10 @@ class ChatOverviewActivity : AppCompatActivity()
 			Log.e(TAG, "startChatActivity -> NO Param with own UserId")
 		}
 	}
+
+    fun startNearbyDevicesActivity() {
+        val intent = Intent(this, NearbyDevices::class.java)
+        startActivity(intent)
+    }
 
 }
