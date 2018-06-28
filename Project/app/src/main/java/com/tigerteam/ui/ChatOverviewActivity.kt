@@ -192,16 +192,24 @@ class ChatOverviewActivity : AppCompatActivity()
 		}
 
 
+
+
         // Es gibt leider keine Möglichkeit zu prüfen ob schon ein Receiver registriert ist
         try {
             // Kommunikation wieder anschmeißen
-            registerReceiver(mReceiver, mIntentFilter)
+            if (mManager != null) {
+                unregisterReceiver(mReceiver)
+                registerReceiver(mReceiver, mIntentFilter)
+                discover()
+
+                // Start Peer-Discovery Thread
+                mContiniousWifiDiscoveryTask = ContiniousWifiDiscoveryTask()
+                mContiniousWifiDiscoveryThread = Thread(mContiniousWifiDiscoveryTask)
+                mContiniousWifiDiscoveryThread!!.start()
+            }
 
 
-            // Start Peer-Discovery Thread
-            mContiniousWifiDiscoveryTask = ContiniousWifiDiscoveryTask()
-            mContiniousWifiDiscoveryThread = Thread(mContiniousWifiDiscoveryTask)
-            mContiniousWifiDiscoveryThread!!.start()
+
         }
         catch (e : Exception) {
             e.printStackTrace()
@@ -406,6 +414,11 @@ class ChatOverviewActivity : AppCompatActivity()
         // Reagieren auf die Device-Auswahl in der Connect Activity
         mChatOverviewBroadCastReceiver = ChatOverviewBroadCastReceiver()
         registerReceiver(mChatOverviewBroadCastReceiver, IntentFilter(Constants.WIFI_CONNECT_TO_DEVICE))
+
+        registerReceiver(mReceiver, mIntentFilter)
+        discover()
+
+
 
     }
 
