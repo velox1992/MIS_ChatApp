@@ -7,8 +7,12 @@ import android.view.ViewGroup
 import android.widget.TextView
 import com.tigerteam.mischat.R
 import com.tigerteam.ui.Objects.ChatOverviewItem
+import java.text.DateFormat
+import java.util.*
+import java.text.SimpleDateFormat
 
-class ChatOverviewRecyclerAdapter : RecyclerView.Adapter<ChatOverviewRecyclerAdapter.ViewHolder> {
+class ChatOverviewRecyclerAdapter : RecyclerView.Adapter<ChatOverviewRecyclerAdapter.ViewHolder>
+{
 	private lateinit var itemsList : List<ChatOverviewItem>
 	private lateinit var clickListener: IChatOverviewItemClickListener
 
@@ -22,43 +26,23 @@ class ChatOverviewRecyclerAdapter : RecyclerView.Adapter<ChatOverviewRecyclerAda
 	inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 	{
 		var itemChatName : TextView
+		var itemDateTime : TextView
 		var itemLastChatMessage : TextView
 
 		init
 		{
 			itemChatName = itemView.findViewById(R.id.lblChatName)
+			itemDateTime = itemView.findViewById(R.id.lblDateTime)
 			itemLastChatMessage = itemView.findViewById(R.id.lblLastChatMessage)
 
-			itemView.setOnClickListener{ v : View->
-				var position: Int = getAdapterPosition()
-				val item  =itemsList[position];
+			itemView.setOnClickListener { v : View ->
+				var position : Int = getAdapterPosition()
+				val item = itemsList[position]
+
 				clickListener.clickedChat(item.chatId, item.chatName)
 			}
 		}
 	}
-
-
-/*	private val titles = arrayOf(
-			"Chapter One",
-			"Chapter Two", "Chapter Three", "Chapter Four",
-			"Chapter Five", "Chapter Six", "Chapter Seven",
-			"Chapter Eight")
-
-	private val details = arrayOf(
-			"Item one details", "Item two details",
-			"Item three details", "Item four details",
-			"Item five details", "Item six details",
-			"Item seven details", "Item eight details")*/
-
-//	private val images = intArrayOf(
-//			R.drawable.android_image_1,
-//			R.drawable.android_image_2,
-//			R.drawable.android_image_3,
-//			R.drawable.android_image_4,
-//			R.drawable.android_image_5,
-//			R.drawable.android_image_6,
-//			R.drawable.android_image_7,
-//			R.drawable.android_image_8)
 
 	//
 	// This method will be called by the RecyclerView to obtain a ViewHolder object. It inflates
@@ -80,13 +64,47 @@ class ChatOverviewRecyclerAdapter : RecyclerView.Adapter<ChatOverviewRecyclerAda
 	//
 	override fun onBindViewHolder(viewHolder: ViewHolder, i: Int)
 	{
-		val item  =itemsList[i];
+		val item = itemsList[i];
+
+		// Format the ChatName field
 		viewHolder.itemChatName.text = item.chatName
-		if(!item.lastUserID.isNullOrBlank()) {
-			viewHolder.itemLastChatMessage.text = "${item.lastUserName} (${item.getDateInNiceFormat()}): ${item.lastMessageData}"
+
+		// Format the Date/Time field
+		if(item.lastUserID.isNullOrBlank())
+		{
+			viewHolder.itemDateTime.text = ""
 		}
-		else{
-			viewHolder.itemLastChatMessage.text = "noch keine Nachrichten"
+		else
+		{
+			var lastMessageCalender = Calendar.getInstance()
+			lastMessageCalender.time = item.lastMessageTimeStamp
+
+			var currentCalender = Calendar.getInstance()
+			val sameDate =
+				lastMessageCalender.get(Calendar.YEAR) == currentCalender.get(Calendar.YEAR) &&
+				lastMessageCalender.get(Calendar.MONTH) == currentCalender.get(Calendar.MONTH) &&
+				lastMessageCalender.get(Calendar.DAY_OF_YEAR) == currentCalender.get(Calendar.DAY_OF_YEAR);
+
+			var formatter: DateFormat
+			if(sameDate)
+			{
+				formatter = SimpleDateFormat("HH:mm")
+			}
+			else
+			{
+				formatter = SimpleDateFormat("dd.MM.yyyy")
+			}
+			viewHolder.itemDateTime.text = formatter.format(item.lastMessageTimeStamp)
+		}
+
+		// Format the Message field
+		if(item.lastUserID.isNullOrBlank())
+		{
+			viewHolder.itemLastChatMessage.text = "Noch keine Nachrichten vorhanden."
+		}
+		else
+		{
+			viewHolder.itemLastChatMessage.text = "${item.lastUserName}: ${item.lastMessageData}"
 		}
 	}
 
