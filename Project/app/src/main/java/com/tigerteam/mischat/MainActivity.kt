@@ -1,44 +1,21 @@
 package com.tigerteam.mischat
 
 
-import android.Manifest
-import android.app.Activity
-import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.content.ServiceConnection
-import android.content.pm.PackageManager
-import android.os.IBinder
-import android.support.v4.app.ActivityCompat
 import android.util.Log
-import android.view.View
 import android.widget.Toast
-import com.tigerteam.ui.ChatOverviewActivity
-import com.tigerteam.ui.CreateChatActivity
-import com.tigerteam.ui.FirstUseActivity
-import com.tigerteam.ui.Objects.CreateChatContact
-import kotlinx.android.synthetic.main.activity_main.*
-import java.io.Serializable
-import kotlin.system.exitProcess
 import android.content.BroadcastReceiver
 import android.net.wifi.p2p.WifiP2pManager
-import android.content.Context.WIFI_P2P_SERVICE
 import android.content.IntentFilter
 import android.net.wifi.p2p.WifiP2pDevice
 import android.net.wifi.p2p.WifiP2pDeviceList
-import android.widget.Adapter
 import android.widget.ArrayAdapter
-import kotlinx.android.synthetic.main.activity_main.*
 import android.net.wifi.WpsInfo
 import android.net.wifi.p2p.WifiP2pConfig
-import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo
-import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest
 import android.os.*
-import android.widget.AdapterView
-import java.lang.reflect.Array.get
-import java.net.Socket
+import com.tigerteam.communication.WiFiDirectBroadcastReceiver
 import java.util.*
 
 
@@ -248,33 +225,6 @@ class MainActivity : AppCompatActivity()
     var mContiniousWifiDiscoveryThread : Thread? = null
     var mContiniousWifiDiscoveryTask : ContiniousWifiDiscoveryTask? = null
 
-    var mHandler = object : Handler(Looper.getMainLooper()) {
-        override fun handleMessage(msg: Message?) {
-            if (msg!!.what == Constants.HANDLER_CODE_NEW_CLIENT_MESSAGE){   // Selbst definierter Code
-                var hBundle = Bundle(msg.data)
-                var hNachricht = hBundle.getString("MessageKey")
-                receivedMessagesAdapater!!.add(hNachricht)
-            }
-            else if (msg!!.what == Constants.HANDLER_CODE_CLIENT_ROLE_DETERMINED){
-                //LblClientOrServer.text = "I'm a client ;)"
-                Log.d(TAG, "I'm a client")
-            }
-            else if (msg!!.what == Constants.HANDLER_CODE_SERVER_ROLE_DETERMINED){
-                //LblClientOrServer.text = "I'm the server :)"
-                Log.d(TAG, "I'm the server")
-            }
-            else if (msg!!.what == Constants.HANDLER_CODE_REGEGISTER_RECEIVER){
-                Log.d(TAG, "Code Received: HANDLER_CODE_REGEGISTER_RECEIVER")
-                Thread.sleep(1000)
-                unregisterReceiver(mReceiver)
-                Thread.sleep(1000)
-                registerReceiver(mReceiver, mIntentFilter)
-            }
-
-        }
-
-
-    } // Um von Threads an den GUI Thread zu kommen
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -285,7 +235,7 @@ class MainActivity : AppCompatActivity()
         //BtnDiscover.setOnClickListener { discover() }
         //BtnConnect.setOnClickListener{ connect() }
 
-
+/*
         // Listen Adapter und Verbindung mit List View
         peersAdapater = ArrayAdapter(this,
                 android.R.layout.simple_list_item_1,
@@ -320,17 +270,22 @@ class MainActivity : AppCompatActivity()
             }
         }
         */
+        *
+        * */
     }
 
     /* register the broadcast receiver with the intent values to be matched */
     override fun onResume() {
-        super.onResume()
-        registerReceiver(mReceiver, mIntentFilter)
 
-        // Start Peer-Discovery Thread
-        mContiniousWifiDiscoveryTask = ContiniousWifiDiscoveryTask()
-        mContiniousWifiDiscoveryThread = Thread(mContiniousWifiDiscoveryTask)
-        mContiniousWifiDiscoveryThread!!.start()
+        super.onResume()
+        /*
+       registerReceiver(mReceiver, mIntentFilter)
+
+       // Start Peer-Discovery Thread
+       mContiniousWifiDiscoveryTask = ContiniousWifiDiscoveryTask()
+       mContiniousWifiDiscoveryThread = Thread(mContiniousWifiDiscoveryTask)
+       mContiniousWifiDiscoveryThread!!.start()
+       */
     }
 
     /* unregister the broadcast receiver */
@@ -371,15 +326,14 @@ class MainActivity : AppCompatActivity()
 
             if (peers.size == 0) {
                 Log.d("MainActivity", "No peers found")
-
                 // no peers found
             }
         }
     }
 
     fun connect(deviceIndex : Int) {
-        Log.d(TAG, "Connect to all Peers")
-        // Picking the first device found on the network.
+        Log.d(TAG, "Connect to Peer")
+
         val device = peers[deviceIndex]
 
         val config = WifiP2pConfig()
@@ -404,7 +358,6 @@ class MainActivity : AppCompatActivity()
     fun setMessage(msg : String) {
         receivedMessagesAdapater!!.add(msg)
     }
-
 
 
     inner class ContiniousWifiDiscoveryTask() : Runnable {

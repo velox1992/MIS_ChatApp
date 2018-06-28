@@ -1,4 +1,4 @@
-package com.tigerteam.mischat
+package com.tigerteam.communication
 
 import android.net.wifi.p2p.WifiP2pManager
 import android.content.Intent
@@ -8,11 +8,11 @@ import android.net.NetworkInfo
 import android.net.wifi.p2p.WifiP2pInfo
 import android.os.AsyncTask
 import android.os.Build
-import android.os.Bundle
 import android.os.Parcelable
 import android.util.Log
 import android.widget.ArrayAdapter
-import java.net.InetAddress
+import com.tigerteam.mischat.Constants
+import com.tigerteam.mischat.MainActivity
 
 
 /**
@@ -69,14 +69,12 @@ class WiFiDirectBroadcastReceiver(private val mManager: WifiP2pManager, private 
                             // One common case is creating a group owner thread and accepting
                             // incoming connections.
                             Log.e("WifiBroadcastReceiver", "Starting the server thread")
-                            var server : ServerTask = ServerTask(context, receivedMsgAdapater, mActivity.mHandler)
+                            var server : ServerTask = ServerTask(context, receivedMsgAdapater)
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
                                 server.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
                             else
                                 server.execute()
                             Log.e("WifiBroadcastReceiver:", "Server is running")
-                            sendMessageCodeToUiHandler(Constants.HANDLER_CODE_SERVER_ROLE_DETERMINED)
-
 
                         } else if (info.groupFormed) {
                             // The other device acts as the peer (client). In this case,
@@ -84,13 +82,12 @@ class WiFiDirectBroadcastReceiver(private val mManager: WifiP2pManager, private 
                             // to the group owner.
                             Log.e("WifiBroadcastReceiver:", "Starting client thread")
                             var clientIp : String? = ClientClass.getLocalIpAddress()
-                            val sender = ClientClass(groupOwnerAddress, mActivity.mHandler)
+                            val sender = ClientClass(groupOwnerAddress)
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                                 sender.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, clientIp)
                             } else {
                                 sender.execute(clientIp)
                             }
-                            sendMessageCodeToUiHandler(Constants.HANDLER_CODE_CLIENT_ROLE_DETERMINED)
 
                         }
                     }
@@ -102,12 +99,6 @@ class WiFiDirectBroadcastReceiver(private val mManager: WifiP2pManager, private 
         }
     }
 
-    fun sendMessageCodeToUiHandler(_Code : Int)
-    {
-        var hHandlerMessage = mActivity.mHandler.obtainMessage()
-        hHandlerMessage.what = _Code    // Message-Code: kann selbst definiert werden
-        mActivity.mHandler.sendMessage(hHandlerMessage)
-    }
 
 
 }
