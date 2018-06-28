@@ -16,13 +16,11 @@ import android.support.v4.app.ActivityCompat
 import android.telephony.TelephonyManager
 import com.tigerteam.ui.Objects.Contact
 import android.provider.ContactsContract
-import android.content.ContentResolver
 import android.support.v4.content.LocalBroadcastManager
 import com.tigerteam.intent.UpdateUIIntent
 import com.tigerteam.ui.Objects.ChatItem
 import com.tigerteam.ui.Objects.ChatOverviewItem
 import java.net.InetAddress
-import java.net.NetworkInterface
 
 
 class ChatService : Service()
@@ -380,6 +378,8 @@ class ChatService : Service()
 	//
 	public fun getPeers() : Queue<InetAddress>
 	{
+		// Do not connect always in the same order
+		peerList.shuffle()
 		return ArrayDeque<InetAddress>(peerList)
 	}
 
@@ -465,6 +465,166 @@ class ChatService : Service()
 		}
 
 		return result
+	}
+
+	//
+	// Add a new user
+	//
+	public fun addUser(user : User) : Boolean
+	{
+		var userAdded = false
+
+		try
+		{
+			userAdded = db.upsertUser(user)
+		}
+		catch(e : Exception)
+		{
+			Log.e(TAG, "addUser(${user.id}, ${user.name}) => ${e.toString()} : ${e.message}")
+		}
+
+		return userAdded
+	}
+
+	//
+	// Add a new chat
+	//
+	public fun addChat(chat : Chat) : Boolean
+	{
+		var chatAdded = false
+
+		try
+		{
+			chatAdded = db.upsertChat(chat)
+		}
+		catch(e : Exception)
+		{
+			Log.e(TAG, "addChat(${chat.id}, ${chat.name}) => ${e.toString()} : ${e.message}")
+		}
+
+		return chatAdded
+	}
+
+	//
+	// Add a new chatuser
+	//
+	public fun addChatUser(chatUser : ChatUser) : Boolean
+	{
+		var chatUserAdded = false
+
+		try
+		{
+			chatUserAdded = db.upsertChatUser(chatUser)
+		}
+		catch(e : Exception)
+		{
+			Log.e(TAG, "addChatUser(${chatUser.chatId}, ${chatUser.userId}, ${chatUser.isOwner}) => ${e.toString()} : ${e.message}")
+		}
+
+		return chatUserAdded
+	}
+
+	//
+	// Add a new chatmessage
+	//
+	public fun addChatMessage(chatMessage : ChatMessage) : Boolean
+	{
+		var chatMessageAdded = false
+
+		try
+		{
+			chatMessageAdded = db.upsertMessage(chatMessage)
+		}
+		catch(e : Exception)
+		{
+			Log.e(TAG, "addChatMessage(${chatMessage.chatId}, ${chatMessage.senderId}, ${chatMessage.data}) => ${e.toString()} : ${e.message}")
+		}
+
+		return chatMessageAdded
+	}
+
+	//
+	// Add a list of potential new user
+	//
+	public fun addUsers(users : List<User>)
+	{
+		var userAdded = 0
+
+		for(user in users)
+		{
+			var isUserAdded = addUser(user)
+			if(isUserAdded)
+				userAdded++
+		}
+		Log.d(TAG, "User received=${users.size}, added=${userAdded}.")
+
+		if(userAdded > 0)
+		{
+			LocalBroadcastManager.getInstance(this).sendBroadcast(UpdateUIIntent());
+		}
+	}
+
+	//
+	// Add a list of potential new chats
+	//
+	public fun addChats(chats : List<Chat>)
+	{
+		var chatsAdded = 0
+
+		for(chat in chats)
+		{
+			var isChatAdded = addChat(chat)
+			if(isChatAdded)
+				chatsAdded++
+		}
+		Log.d(TAG, "Chats received=${chats.size}, added=${chatsAdded}.")
+
+		if(chatsAdded > 0)
+		{
+			LocalBroadcastManager.getInstance(this).sendBroadcast(UpdateUIIntent());
+		}
+	}
+
+	//
+	// Add a list of potential new ChatUser
+	//
+	public fun addChatUsers(chatUsers : List<ChatUser>)
+	{
+		var chatUserAdded = 0
+
+		for(chatUser in chatUsers)
+		{
+			var isChatUserAdded = addChatUser(chatUser)
+			if(isChatUserAdded)
+				chatUserAdded++
+		}
+		Log.d(TAG, "ChatUsers received=${chatUsers.size}, added=${chatUserAdded}.")
+
+		if(chatUserAdded > 0)
+		{
+			LocalBroadcastManager.getInstance(this).sendBroadcast(UpdateUIIntent());
+		}
+	}
+
+	//
+	// Add a list of potential new ChatMessages
+	//
+	public fun addChatMessages(chatMessages : List<ChatMessage>)
+	{
+		var chatMessageAdded = 0
+
+		for(chatMessage in chatMessages)
+		{
+			var isChatMessageAdded = addChatMessage(chatMessage)
+			if(isChatMessageAdded)
+				chatMessageAdded++
+		}
+		Log.d(TAG, "ChatMessages received=${chatMessages.size}, added=${chatMessageAdded}.")
+
+		if(chatMessageAdded > 0)
+		{
+			LocalBroadcastManager.getInstance(this).sendBroadcast(UpdateUIIntent());
+		}
 	}
 
 

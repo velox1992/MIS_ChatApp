@@ -39,5 +39,7 @@ class Constants
 
 		// Sync
 		const val SYNC_SERVER_SOCKET_PORT = 7734
+		const val SYNC_SERVER_SOCKET_TIMEOUT = 5000
+		const val SYNC_CLIENT_SOCKET_TIMEOUT = 5000
 	}
 }

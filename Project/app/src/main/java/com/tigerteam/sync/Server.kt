@@ -9,7 +9,13 @@ import java.io.ObjectOutputStream
 import java.io.OutputStream
 import java.net.ServerSocket
 import java.net.Socket
+import java.net.SocketTimeoutException
+import java.util.*
 
+//
+// Android Client-Server Using Sockets – Server Implementation
+// http://androidsrc.net/android-client-server-using-sockets-server-implementation/
+//
 class Server(val chatService : ChatService) : Runnable
 {
 	//----------------------------------------------------------------------------------------------
@@ -29,6 +35,7 @@ class Server(val chatService : ChatService) : Runnable
 	var oosResponse : ObjectOutputStream? = null
 
 
+
 	//----------------------------------------------------------------------------------------------
 	// Overridden Methods
 	//----------------------------------------------------------------------------------------------
@@ -41,12 +48,18 @@ class Server(val chatService : ChatService) : Runnable
 			{
 				Log.d(TAG, "Creating ServerSocket.")
 				serverSocket = ServerSocket(Constants.SYNC_SERVER_SOCKET_PORT)
+				serverSocket!!.soTimeout = 0
 
 				Log.d(TAG, "Wait for client.")
 				socket = serverSocket!!.accept()
+				socket!!.soTimeout = Constants.SYNC_SERVER_SOCKET_TIMEOUT
 
 				while(receiveRequest(socket!!)) { }
 			}
+//			catch(e: SocketTimeoutException)
+//			{
+//				Log.e(TAG, "Server.run() => ${e.toString()} : ${e.message}")
+//			}
 			catch(e: Exception)
 			{
 				Log.e(TAG, "Server.run() => ${e.toString()} : ${e.message}")
@@ -103,7 +116,7 @@ class Server(val chatService : ChatService) : Runnable
 			oosResponse = ObjectOutputStream(socket.getOutputStream())
 
 		var users = mutableListOf<User>()
-		for(user : com.tigerteam.database.DbObjects.User in chatService.getAllUsers())
+		for(user in chatService.getAllUsers())
 			users.add(User(user))
 
 		Log.d(TAG, "Sending Users(${users.size}).")
@@ -116,7 +129,7 @@ class Server(val chatService : ChatService) : Runnable
 			oosResponse = ObjectOutputStream(socket.getOutputStream())
 
 		var chats = mutableListOf<Chat>()
-		for(chat : com.tigerteam.database.DbObjects.Chat in chatService.getAllChats())
+		for(chat in chatService.getAllChats())
 			chats.add(Chat(chat))
 
 		Log.d(TAG, "Sending Chats(${chats.size}).")
@@ -129,7 +142,7 @@ class Server(val chatService : ChatService) : Runnable
 			oosResponse = ObjectOutputStream(socket.getOutputStream())
 
 		var chatUsers = mutableListOf<ChatUser>()
-		for(chatUser : com.tigerteam.database.DbObjects.ChatUser in chatService.getAllChatUsers())
+		for(chatUser in chatService.getAllChatUsers())
 			chatUsers.add(ChatUser(chatUser))
 
 		Log.d(TAG, "Sending ChatUsers(${chatUsers.size}).")
@@ -142,7 +155,7 @@ class Server(val chatService : ChatService) : Runnable
 			oosResponse = ObjectOutputStream(socket.getOutputStream())
 
 		var chatMessages = mutableListOf<ChatMessage>()
-		for(chatMessage : com.tigerteam.database.DbObjects.ChatMessage in chatService.getAllChatMessages())
+		for(chatMessage in chatService.getAllChatMessages())
 			chatMessages.add(ChatMessage(chatMessage))
 
 		Log.d(TAG, "Sending ChatMessages(${chatMessages.size}).")
