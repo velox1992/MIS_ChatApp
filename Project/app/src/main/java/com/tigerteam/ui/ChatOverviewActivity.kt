@@ -407,7 +407,6 @@ class ChatOverviewActivity : AppCompatActivity()
         mChatOverviewBroadCastReceiver = ChatOverviewBroadCastReceiver()
         registerReceiver(mChatOverviewBroadCastReceiver, IntentFilter(Constants.WIFI_CONNECT_TO_DEVICE))
 
-        registerReceiver(mReceiver, mIntentFilter)
     }
 
 
