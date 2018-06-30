@@ -952,6 +952,12 @@ class ChatService : Service()
 				return@Thread
 			}
 
+			if(device.status == WifiP2pDevice.INVITED)
+			{
+				Log.d(TAG, "(${currentThread.id}) Device already invited: ${device.deviceName}.")
+				return@Thread
+			}
+
 			Log.d(TAG, "(${currentThread.id}) Try to connect to device: ${device.deviceName}.")
 
 			val wifiP2pConfig: WifiP2pConfig = WifiP2pConfig()
