@@ -2,7 +2,6 @@ package com.tigerteam.mischat
 
 import android.Manifest
 import android.app.Service
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -14,12 +13,17 @@ import com.tigerteam.database.*
 import com.tigerteam.database.DbObjects.*
 import com.tigerteam.ui.Objects.CreateChatContact
 import android.content.pm.PackageManager
-import android.net.wifi.p2p.WifiP2pManager
+import android.net.NetworkInfo
+import android.net.wifi.WpsInfo
+import android.net.wifi.p2p.*
 import android.support.v4.app.ActivityCompat
 import android.telephony.TelephonyManager
 import com.tigerteam.ui.Objects.Contact
 import android.provider.ContactsContract
 import android.support.v4.content.LocalBroadcastManager
+import com.tigerteam.WifiP2p.IPExchangeClient
+import com.tigerteam.WifiP2p.IPExchangeServer
+import com.tigerteam.WifiP2p.WifiP2pBroadcastReceiver
 import com.tigerteam.intent.UpdateUIIntent
 import com.tigerteam.ui.Objects.ChatItem
 import com.tigerteam.ui.Objects.ChatOverviewItem
@@ -52,11 +56,16 @@ class ChatService : Service()
 	private var syncServer : Thread? = null
 	private var syncClient : Thread? = null
 
-	private var peerList : MutableList<InetAddress> = mutableListOf<InetAddress>()
 	private var wifiP2pManager : WifiP2pManager? = null
 	private var wifiP2pChannel : WifiP2pManager.Channel? = null
 	private var intentFilter : IntentFilter? = null
 	private var broadcastReceiver : WifiP2pBroadcastReceiver? = null
+
+	private var wifiP2pDiscoveryState : Int = -1
+	private var ipExchangeServerThread : Thread? = null
+	private var ipExchangeClientThread : Thread? = null
+	private var ownInetAddress : InetAddress? = null
+	private var inetAddresses = mutableSetOf<InetAddress>()
 
 
 	//----------------------------------------------------------------------------------------------
@@ -73,9 +82,6 @@ class ChatService : Service()
 	{
 		Log.i(TAG, "ChatService onCreate")
 
-		// TODO: Remove in final version
-		peerList.add(InetAddress.getLoopbackAddress())
-
 		//----
 		syncServer = Thread(com.tigerteam.sync.Server(this))
 		syncServer!!.start()
@@ -88,7 +94,7 @@ class ChatService : Service()
 		wifiP2pChannel = wifiP2pManager!!.initialize(this, getMainLooper(), null)
 
 		//----
-		broadcastReceiver = WifiP2pBroadcastReceiver(wifiP2pManager!!, wifiP2pChannel!!, this)
+		broadcastReceiver = WifiP2pBroadcastReceiver(this)
 
 		//----
 		intentFilter = IntentFilter()
@@ -416,24 +422,6 @@ class ChatService : Service()
 	}
 
 	//
-	// Get possible connections to other phones.
-	//
-	public fun getPeers() : Queue<InetAddress>
-	{
-		// Do not connect always in the same order
-		peerList.shuffle()
-		return ArrayDeque<InetAddress>(peerList)
-	}
-
-	//
-	// Set possible connections to other phones.
-	//
-	public fun setPeers(newPeerList : MutableList<InetAddress>)
-	{
-		peerList = newPeerList
-	}
-
-	//
 	// Get all users from the database
 	//
 	public fun getAllUsers() : List<com.tigerteam.database.DbObjects.User>
@@ -670,9 +658,6 @@ class ChatService : Service()
 	}
 
 
-	var ownInetAddress : InetAddress? = null
-	var inetAddresses = mutableSetOf<InetAddress>()
-
 	//
 	// IPExchangeClient adds his ip and the ip's of the other clients
 	//
@@ -716,6 +701,139 @@ class ChatService : Service()
 	}
 
 
+	//
+	// React to state changed in the WIFI_P2P_DISCOVERY
+	//
+	public fun wifiP2pDiscoveryChanged(discoveryState : Int)
+	{
+		wifiP2pDiscoveryState = discoveryState
+
+		if(wifiP2pDiscoveryState == WifiP2pManager.WIFI_P2P_DISCOVERY_STARTED)
+		{
+			Log.d(TAG, "Wi-Fi p2p discovery has started.")
+		}
+
+		if(wifiP2pDiscoveryState == WifiP2pManager.WIFI_P2P_DISCOVERY_STOPPED)
+		{
+			Thread({
+				Log.d(TAG, "Wi-Fi p2p discovery has stopped, so we start the next discovery in 5 seconds.")
+				Thread.sleep(5000)
+
+				wifiP2pManager!!.discoverPeers(wifiP2pChannel, object : WifiP2pManager.ActionListener
+				{
+					override fun onSuccess()
+					{
+						Log.d(TAG, "WifiP2pManager.discoverPeers() => OnSuccess")
+					}
+
+					override fun onFailure(reasonCode: Int)
+					{
+						Log.d(TAG, "WifiP2pManager.discoverPeers() => onFailure($reasonCode)")
+					}
+				})
+			}).start()
+		}
+	}
+
+
+	//
+	// If the peer list changed, try to connect to new peers
+	//
+	public fun wifiP2pPeersChanged(wifiP2pDeviceList : WifiP2pDeviceList)
+	{
+		for(device in wifiP2pDeviceList.deviceList)
+		{
+			Thread({
+				val currentThread = Thread.currentThread()
+
+				if(device.status == WifiP2pDevice.CONNECTED)
+				{
+					Log.d(TAG, "(${currentThread.id}) Already connected to device: ${device.deviceName}.")
+					return@Thread
+				}
+
+				if(device.deviceName.startsWith("[TV] Samsung 5 Series", true))
+				{
+					Log.d(TAG, "(${currentThread.id}) We do not want to connect to a TV device: ${device.deviceName}.")
+					return@Thread
+				}
+
+				Log.d(TAG, "(${currentThread.id}) Try to connect to device: ${device.deviceName}.")
+
+				val wifiP2pConfig: WifiP2pConfig = WifiP2pConfig()
+				wifiP2pConfig.deviceAddress = device.deviceAddress
+				wifiP2pConfig.wps.setup = WpsInfo.PBC;
+
+				wifiP2pManager?.connect(wifiP2pChannel, wifiP2pConfig, object : WifiP2pManager.ActionListener
+				{
+					override fun onSuccess()
+					{
+						Log.d(TAG, "(${currentThread.id}) WifiP2pManager.connect -> onSuccess().")
+					}
+
+					override fun onFailure(reason: Int)
+					{
+						Log.d(TAG, "(${currentThread.id}) WifiP2pManager.connect -> onFailure(${reason}.")
+					}
+				})
+			}).start()
+		}
+	}
+
+
+	//
+	// If we get connected to a new group, create a new IPExchangeClient.
+	// If we get the groupOwner, create a new IPExchangeServer.
+	//
+	public fun wifiP2pConnectionChanged(
+		wifiP2pInfo : WifiP2pInfo, wifiP2pGroup : WifiP2pGroup, networkInfo : NetworkInfo)
+	{
+		if(!networkInfo.isConnected())
+		{
+			if(ipExchangeClientThread != null)
+			{
+				ipExchangeClientThread!!.interrupt()
+				ipExchangeClientThread = null
+			}
+
+			if(ipExchangeServerThread != null)
+			{
+				ipExchangeServerThread!!.interrupt()
+				ipExchangeServerThread = null
+			}
+
+			return
+		}
+
+		if(wifiP2pInfo.isGroupOwner)
+		{
+			if(ipExchangeClientThread != null)
+			{
+				ipExchangeClientThread!!.interrupt()
+				ipExchangeClientThread = null
+			}
+
+			if(ipExchangeServerThread == null)
+			{
+				ipExchangeServerThread = Thread(IPExchangeServer(this))
+				ipExchangeServerThread!!.start()
+			}
+		}
+		else
+		{
+			if(ipExchangeServerThread != null)
+			{
+				ipExchangeServerThread!!.interrupt()
+				ipExchangeServerThread = null
+			}
+
+			if(ipExchangeClientThread == null)
+			{
+				ipExchangeClientThread = Thread(IPExchangeClient(this, wifiP2pInfo.groupOwnerAddress))
+				ipExchangeClientThread !!.start()
+			}
+		}
+	}
 
 
 

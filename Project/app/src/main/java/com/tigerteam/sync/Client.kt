@@ -21,6 +21,7 @@ class Client(val chatService : ChatService) : Runnable
 	//----------------------------------------------------------------------------------------------
 
 	val TAG : String = "Sync.Client"
+	val LOG : Boolean = false
 
 
 	//----------------------------------------------------------------------------------------------
@@ -46,7 +47,8 @@ class Client(val chatService : ChatService) : Runnable
 			{
 				if(peerQueue.isEmpty())
 				{
-					peerQueue.addAll(chatService.getPeerAddresses(true))
+					// Do not connect always in the same order
+					peerQueue.addAll(chatService.getPeerAddresses(true).shuffled())
 					if(peerQueue.isEmpty())
 					{
 						Thread.sleep(randomTime(500, 1500).toLong())
@@ -64,7 +66,7 @@ class Client(val chatService : ChatService) : Runnable
 				processChatUsers(socket!!)
 				processMessages(socket!!)
 
-				Log.d(TAG, "Requesting Quit.")
+				//Log.d(TAG, "Requesting Quit.")
 				oosRequest!!.writeObject(DataRequest(DataRequestType.Quit))
 				Thread.sleep(500)
 			}
@@ -84,7 +86,8 @@ class Client(val chatService : ChatService) : Runnable
 				oisResponse = null
 				oosRequest = null
 
-				Log.d(TAG, "Closing Socket.")
+				if(LOG) Log.d(TAG, "Closing Socket.")
+
 				socket?.close()
 				socket = null
 			}
@@ -100,12 +103,14 @@ class Client(val chatService : ChatService) : Runnable
 
 	private fun processUsers(socket : Socket)
 	{
-		Log.d(TAG, "Requesting User.")
+		if(LOG) Log.d(TAG, "Requesting User.")
+
 		if(oosRequest == null)
 			oosRequest = ObjectOutputStream(socket.getOutputStream())
 		oosRequest!!.writeObject(DataRequest(DataRequestType.User))
 
-		Log.d(TAG, "Receiving User.")
+		if(LOG) Log.d(TAG, "Receiving User.")
+
 		if(oisResponse == null)
 			oisResponse = ObjectInputStream(socket!!.getInputStream())
 		var users = oisResponse!!.readObject() as MutableList<User>
@@ -123,12 +128,14 @@ class Client(val chatService : ChatService) : Runnable
 
 	private fun processChats(socket : Socket)
 	{
-		Log.d(TAG, "Requesting Chat.")
+		if(LOG) Log.d(TAG, "Requesting Chat.")
+
 		if(oosRequest == null)
 			oosRequest = ObjectOutputStream(socket.getOutputStream())
 		oosRequest!!.writeObject(DataRequest(DataRequestType.Chat))
 
-		Log.d(TAG, "Receiving Chat.")
+		if(LOG) Log.d(TAG, "Receiving Chat.")
+
 		if(oisResponse == null)
 			oisResponse = ObjectInputStream(socket!!.getInputStream())
 		var chats = oisResponse!!.readObject() as MutableList<Chat>
@@ -146,12 +153,14 @@ class Client(val chatService : ChatService) : Runnable
 
 	private fun processChatUsers(socket : Socket)
 	{
-		Log.d(TAG, "Requesting ChatUsers.")
+		if(LOG) Log.d(TAG, "Requesting ChatUsers.")
+
 		if(oosRequest == null)
 			oosRequest = ObjectOutputStream(socket.getOutputStream())
 		oosRequest!!.writeObject(DataRequest(DataRequestType.ChatUser))
 
-		Log.d(TAG, "Receiving ChatUsers.")
+		if(LOG) Log.d(TAG, "Receiving ChatUsers.")
+
 		if(oisResponse == null)
 			oisResponse = ObjectInputStream(socket!!.getInputStream())
 		var chatUsers = oisResponse!!.readObject() as MutableList<ChatUser>
@@ -169,12 +178,14 @@ class Client(val chatService : ChatService) : Runnable
 
 	private fun processMessages(socket : Socket)
 	{
-		Log.d(TAG, "Requesting Messsages.")
+		if(LOG) Log.d(TAG, "Requesting Messsages.")
+
 		if(oosRequest == null)
 			oosRequest = ObjectOutputStream(socket.getOutputStream())
 		oosRequest!!.writeObject(DataRequest(DataRequestType.Messages))
 
-		Log.d(TAG, "Receiving Messages.")
+		if(LOG) Log.d(TAG, "Receiving Messages.")
+
 		if(oisResponse == null)
 			oisResponse = ObjectInputStream(socket!!.getInputStream())
 		var chatMessages = oisResponse!!.readObject() as MutableList<ChatMessage>

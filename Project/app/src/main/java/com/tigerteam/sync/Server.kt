@@ -23,6 +23,7 @@ class Server(val chatService : ChatService) : Runnable
 	//----------------------------------------------------------------------------------------------
 
 	val TAG : String = "Sync.Server"
+	val LOG : Boolean = false
 
 
 	//----------------------------------------------------------------------------------------------
@@ -46,11 +47,13 @@ class Server(val chatService : ChatService) : Runnable
 		{
 			try
 			{
-				Log.d(TAG, "Creating ServerSocket.")
+				if(LOG) Log.d(TAG, "Creating ServerSocket.")
+
 				serverSocket = ServerSocket(Constants.SYNC_SERVER_SOCKET_PORT)
 				serverSocket!!.soTimeout = 0
 
-				Log.d(TAG, "Wait for client.")
+				if(LOG) Log.d(TAG, "Wait for client.")
+
 				socket = serverSocket!!.accept()
 				socket!!.soTimeout = Constants.SYNC_SERVER_SOCKET_TIMEOUT
 
@@ -72,11 +75,13 @@ class Server(val chatService : ChatService) : Runnable
 				oisRequest?.close()
 				oisRequest = null
 
-				Log.d(TAG, "Closing Socket.")
+				if(LOG) Log.d(TAG, "Closing Socket.")
+
 				socket?.close()
 				socket = null
 
-				Log.d(TAG, "Closing ServerSocket.")
+				if(LOG) Log.d(TAG, "Closing ServerSocket.")
+
 				serverSocket?.close()
 				serverSocket = null
 			}
@@ -95,7 +100,8 @@ class Server(val chatService : ChatService) : Runnable
 		if(oisRequest == null)
 			oisRequest = ObjectInputStream(socket.getInputStream())
 
-		Log.d(TAG, "Waiting for DataRequest.")
+		if(LOG) Log.d(TAG, "Waiting for DataRequest.")
+
 		var dataRequest = oisRequest!!.readObject() as DataRequest
 
 		when(dataRequest.request)
@@ -119,7 +125,8 @@ class Server(val chatService : ChatService) : Runnable
 		for(user in chatService.getAllUsers())
 			users.add(User(user))
 
-		Log.d(TAG, "Sending Users(${users.size}).")
+		if(LOG) Log.d(TAG, "Sending Users(${users.size}).")
+
 		oosResponse!!.writeObject(users)
 	}
 
@@ -132,7 +139,8 @@ class Server(val chatService : ChatService) : Runnable
 		for(chat in chatService.getAllChats())
 			chats.add(Chat(chat))
 
-		Log.d(TAG, "Sending Chats(${chats.size}).")
+		if(LOG) Log.d(TAG, "Sending Chats(${chats.size}).")
+
 		oosResponse?.writeObject(chats)
 	}
 
@@ -145,7 +153,8 @@ class Server(val chatService : ChatService) : Runnable
 		for(chatUser in chatService.getAllChatUsers())
 			chatUsers.add(ChatUser(chatUser))
 
-		Log.d(TAG, "Sending ChatUsers(${chatUsers.size}).")
+		if(LOG) Log.d(TAG, "Sending ChatUsers(${chatUsers.size}).")
+
 		oosResponse?.writeObject(chatUsers)
 	}
 
@@ -158,7 +167,8 @@ class Server(val chatService : ChatService) : Runnable
 		for(chatMessage in chatService.getAllChatMessages())
 			chatMessages.add(ChatMessage(chatMessage))
 
-		Log.d(TAG, "Sending ChatMessages(${chatMessages.size}).")
+		if(LOG) Log.d(TAG, "Sending ChatMessages(${chatMessages.size}).")
+
 		oosResponse?.writeObject(chatMessages)
 	}
 }
