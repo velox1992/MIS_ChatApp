@@ -133,6 +133,9 @@ class ChatService : Service()
 		wifiP2pManager!!.setServiceResponseListener(wifiP2pChannel, broadcastReceiver)
 
 		//----
+		// https://stackoverflow.com/questions/26300889/wifi-p2p-service-discovery-works-intermittently
+		// https://stackoverflow.com/questions/23861391/wifi-p2p-add-local-service-failure
+		//----
 		wifiP2pManager!!.clearLocalServices(wifiP2pChannel, object : WifiP2pManager.ActionListener
 		{
 			override fun onFailure(reasonCode: Int)
@@ -165,6 +168,10 @@ class ChatService : Service()
 			}
 		})
 
+		//----
+		// https://stackoverflow.com/questions/6242268/repeat-a-task-with-a-time-delay/6242292#6242292
+		// https://developer.android.com/reference/android/os/Handler
+		//----
 		discoHandler = Handler()
 		discoHandler?.postDelayed(discoRunnable, 5000)
 	}

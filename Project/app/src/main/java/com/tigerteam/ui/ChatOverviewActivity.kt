@@ -1,14 +1,12 @@
 package com.tigerteam.ui
 
 import android.Manifest
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.content.ServiceConnection
+import android.content.*
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.IBinder
 import android.support.v4.app.ActivityCompat
+import android.support.v4.content.LocalBroadcastManager
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
@@ -16,6 +14,7 @@ import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import com.tigerteam.intent.UpdateUIIntent
 import com.tigerteam.mischat.ChatService
 import com.tigerteam.mischat.Constants
 import com.tigerteam.mischat.R
@@ -69,12 +68,9 @@ class ChatOverviewActivity : AppCompatActivity()
 	private var chatService: ChatService? = null
 	private var isChatServiceBound = false
 
-
 	private lateinit var recyclerView: RecyclerView
 	private lateinit var viewAdapter: RecyclerView.Adapter<*>
 	private lateinit var viewManager: RecyclerView.LayoutManager
-
-
 
 	private var chatClickListener = object : IChatOverviewItemClickListener
 	{
@@ -82,6 +78,21 @@ class ChatOverviewActivity : AppCompatActivity()
 			startChatActivity(chatId, chatName)
 		}
 	}
+
+	private val broadcastReceiver = object : BroadcastReceiver()
+	{
+		override fun onReceive(context: Context, intent: Intent)
+		{
+			Log.d(TAG, "onReceive")
+
+			if(intent is UpdateUIIntent)
+			{
+				showMyChats()
+			}
+		}
+	}
+	private val intentFilter : IntentFilter = IntentFilter()
+
 
 	//----------------------------------------------------------------------------------------------
 	// Overridden Methods
@@ -124,6 +135,9 @@ class ChatOverviewActivity : AppCompatActivity()
 		{
 			ActivityCompat.requestPermissions(this, neededPermissions.toTypedArray(), 22)
 		}
+
+		//----
+		intentFilter.addAction(UpdateUIIntent().action)
 	}
 
 	override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -157,6 +171,17 @@ class ChatOverviewActivity : AppCompatActivity()
 		if(isChatServiceBound) {
 			showMyChats()
 		}
+
+		//----
+		LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, intentFilter)
+	}
+
+	override fun onPause()
+	{
+		super.onPause()
+
+		//----
+		LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver)
 	}
 
 	override fun onDestroy()
@@ -254,8 +279,10 @@ class ChatOverviewActivity : AppCompatActivity()
 	}
 
 
-	fun showMyChats(){
-		if(isChatServiceBound) {
+	fun showMyChats()
+	{
+		if(isChatServiceBound)
+		{
 			val chatOverviewITems = chatService!!.getChatOverview()
 
 			viewManager = LinearLayoutManager(this)
