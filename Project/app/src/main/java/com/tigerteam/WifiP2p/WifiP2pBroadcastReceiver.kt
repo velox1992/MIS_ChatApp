@@ -8,7 +8,12 @@ import android.net.wifi.p2p.*
 import android.util.Log
 import com.tigerteam.mischat.ChatService
 
-class WifiP2pBroadcastReceiver(var chatService: ChatService) : BroadcastReceiver()
+class WifiP2pBroadcastReceiver(var chatService: ChatService)
+	:
+	BroadcastReceiver(),
+	WifiP2pManager.DnsSdServiceResponseListener,
+	WifiP2pManager.DnsSdTxtRecordListener,
+	WifiP2pManager.ServiceResponseListener
 {
 	//----------------------------------------------------------------------------------------------
 	// Const Variables
@@ -21,10 +26,11 @@ class WifiP2pBroadcastReceiver(var chatService: ChatService) : BroadcastReceiver
 	// Overridden Methods
 	//----------------------------------------------------------------------------------------------
 
+	//
+	// BroadcastReceiver
+	//
 	override fun onReceive(context: Context?, intent: Intent?)
 	{
-		Log.d(TAG, "Intent Action=${intent!!.action}")
-
 		when(intent!!.action)
 		{
 			WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION -> WIFI_P2P_CONNECTION_CHANGED_ACTION(context, intent)
@@ -32,7 +38,43 @@ class WifiP2pBroadcastReceiver(var chatService: ChatService) : BroadcastReceiver
 			WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION -> WIFI_P2P_PEERS_CHANGED_ACTION(context, intent)
 			WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION -> WIFI_P2P_STATE_CHANGED_ACTION(context, intent)
 			WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION  -> WIFI_P2P_THIS_DEVICE_CHANGED_ACTION(context, intent)
+			else -> Log.d(TAG, "onReceive(context, intent.action=${intent!!.action})")
 		}
+	}
+
+	//
+	// WifiP2pManager.DnsSdServiceResponseListener
+	//
+	override fun onDnsSdServiceAvailable(
+		instanceName: String?, registrationType: String?, srcDevice: WifiP2pDevice?)
+	{
+		Log.d(TAG, "onDnsSdServiceAvailable() => instanceName=${instanceName}")
+		Log.d(TAG, "onDnsSdServiceAvailable() => registrationType=${registrationType}")
+		Log.d(TAG, "onDnsSdServiceAvailable() => srcDevice=${srcDevice})")
+	}
+
+	//
+	// WifiP2pManager.DnsSdTxtRecordListener
+	//
+	override fun onDnsSdTxtRecordAvailable(
+		fullDomainName: String?, txtRecordMap: MutableMap<String, String>?, srcDevice: WifiP2pDevice?)
+	{
+		Log.d(TAG, "onDnsSdTxtRecordAvailable() => fullDomainName=${fullDomainName}")
+		Log.d(TAG, "onDnsSdTxtRecordAvailable() => txtRecordMap=${txtRecordMap}")
+		Log.d(TAG, "onDnsSdTxtRecordAvailable() => srcDevice=${srcDevice}")
+
+		if(srcDevice != null)
+			chatService.wifiP2pServiceAvailable(srcDevice)
+	}
+
+	//
+	// WifiP2pManager.ServiceResponseListener
+	//
+	override fun onServiceAvailable(protocolType: Int, responseData: ByteArray?, srcDevice: WifiP2pDevice?)
+	{
+		Log.d(TAG, "onServiceAvailable() => protocolType=${protocolType}")
+		Log.d(TAG, "onServiceAvailable() => responseData=${responseData}")
+		Log.d(TAG, "onServiceAvailable() => srcDevice=${srcDevice}")
 	}
 
 
@@ -55,12 +97,11 @@ class WifiP2pBroadcastReceiver(var chatService: ChatService) : BroadcastReceiver
 		var networkInfo : NetworkInfo? = null
 
 		wifiP2pInfo = intent!!.getParcelableExtra<WifiP2pInfo>(WifiP2pManager.EXTRA_WIFI_P2P_INFO)
-		Log.d(TAG, "WIFI_P2P_CONNECTION_CHANGED_ACTION: WifiP2pInfo=${wifiP2pInfo}")
-
 		wifiP2pGroup = intent!!.getParcelableExtra<WifiP2pGroup>(WifiP2pManager.EXTRA_WIFI_P2P_GROUP)
-		Log.d(TAG, "WIFI_P2P_CONNECTION_CHANGED_ACTION: WifiP2pGroup=${wifiP2pGroup}")
-
 		networkInfo = intent!!.getParcelableExtra<NetworkInfo>(WifiP2pManager.EXTRA_NETWORK_INFO)
+
+		Log.d(TAG, "WIFI_P2P_CONNECTION_CHANGED_ACTION: WifiP2pInfo=${wifiP2pInfo}")
+		Log.d(TAG, "WIFI_P2P_CONNECTION_CHANGED_ACTION: WifiP2pGroup=${wifiP2pGroup}")
 		Log.d(TAG, "WIFI_P2P_CONNECTION_CHANGED_ACTION: NetworkInfo=${networkInfo}")
 
 		chatService.wifiP2pConnectionChanged(wifiP2pInfo, wifiP2pGroup, networkInfo)
@@ -78,6 +119,13 @@ class WifiP2pBroadcastReceiver(var chatService: ChatService) : BroadcastReceiver
 	private fun WIFI_P2P_DISCOVERY_CHANGED_ACTION(context: Context?, intent: Intent?)
 	{
 		var discoveryState : Int = intent!!.getIntExtra(WifiP2pManager.EXTRA_DISCOVERY_STATE, -1)
+
+		when(discoveryState)
+		{
+			WifiP2pManager.WIFI_P2P_DISCOVERY_STARTED -> Log.d(TAG, "WIFI_P2P_DISCOVERY_CHANGED_ACTION: discoveryState=WIFI_P2P_DISCOVERY_STARTED" )
+			WifiP2pManager.WIFI_P2P_DISCOVERY_STOPPED -> Log.d(TAG, "WIFI_P2P_DISCOVERY_CHANGED_ACTION: discoveryState=WIFI_P2P_DISCOVERY_STOPPED" )
+		}
+
 		chatService.wifiP2pDiscoveryChanged(discoveryState)
 	}
 
@@ -95,6 +143,8 @@ class WifiP2pBroadcastReceiver(var chatService: ChatService) : BroadcastReceiver
 	{
 		var wifiP2pDeviceList : WifiP2pDeviceList? = null
 		wifiP2pDeviceList = intent!!.getParcelableExtra<WifiP2pDeviceList>(WifiP2pManager.EXTRA_P2P_DEVICE_LIST)
+		Log.d(TAG, "WIFI_P2P_PEERS_CHANGED_ACTION: wifiP2pDeviceList=${wifiP2pDeviceList}")
+
 		chatService.wifiP2pPeersChanged(wifiP2pDeviceList)
 	}
 
@@ -111,8 +161,8 @@ class WifiP2pBroadcastReceiver(var chatService: ChatService) : BroadcastReceiver
 		var wifiState : Int = intent!!.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1)
 		when(wifiState)
 		{
-			WifiP2pManager.WIFI_P2P_STATE_ENABLED -> Log.d(TAG, "Wi-Fi p2p is now enabled.")
-			WifiP2pManager.WIFI_P2P_STATE_DISABLED -> Log.d(TAG, "Wi-Fi p2p is now disabled.")
+			WifiP2pManager.WIFI_P2P_STATE_ENABLED -> Log.d(TAG, "WIFI_P2P_STATE_CHANGED_ACTION: wifiState=WIFI_P2P_STATE_ENABLED")
+			WifiP2pManager.WIFI_P2P_STATE_DISABLED -> Log.d(TAG, "WIFI_P2P_STATE_CHANGED_ACTION: wifiState=WIFI_P2P_STATE_DISABLED")
 		}
 	}
 
@@ -124,6 +174,6 @@ class WifiP2pBroadcastReceiver(var chatService: ChatService) : BroadcastReceiver
 		var thisDevice : WifiP2pDevice ? = null
 
 		thisDevice = intent!!.getParcelableExtra<WifiP2pDevice>(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE)
-		Log.d(TAG, "This device=$thisDevice")
+		Log.d(TAG, "WIFI_P2P_THIS_DEVICE_CHANGED_ACTION: thisDevice=$thisDevice")
 	}
 }

@@ -16,6 +16,11 @@ import android.content.pm.PackageManager
 import android.net.NetworkInfo
 import android.net.wifi.WpsInfo
 import android.net.wifi.p2p.*
+import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo
+import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest
+import android.net.wifi.p2p.nsd.WifiP2pServiceInfo
+import android.net.wifi.p2p.nsd.WifiP2pServiceRequest
+import android.os.Handler
 import android.support.v4.app.ActivityCompat
 import android.telephony.TelephonyManager
 import com.tigerteam.ui.Objects.Contact
@@ -67,6 +72,22 @@ class ChatService : Service()
 	private var ownInetAddress : InetAddress? = null
 	private var inetAddresses = mutableSetOf<InetAddress>()
 
+	private var discoHandler : Handler? = null
+	private val discoRunnable : Runnable = object : Runnable
+	{
+		override fun run()
+		{
+			try
+			{
+				discoverService()
+			}
+			finally
+			{
+				discoHandler?.postDelayed(this, 5000)
+			}
+		}
+	}
+
 
 	//----------------------------------------------------------------------------------------------
 	// Overridden Methods
@@ -108,18 +129,44 @@ class ChatService : Service()
 		registerReceiver(broadcastReceiver, intentFilter)
 
 		//----
-		wifiP2pManager!!.discoverPeers(wifiP2pChannel, object : WifiP2pManager.ActionListener
-		{
-            override fun onSuccess()
-            {
-                Log.d(TAG, "WifiP2pManager.discoverPeers() => OnSuccess")
-            }
+		wifiP2pManager!!.setDnsSdResponseListeners(wifiP2pChannel, broadcastReceiver, broadcastReceiver)
+		wifiP2pManager!!.setServiceResponseListener(wifiP2pChannel, broadcastReceiver)
 
-            override fun onFailure(reasonCode: Int)
-            {
-	            Log.d(TAG, "WifiP2pManager.discoverPeers() => onFailure($reasonCode)")
-            }
-        })
+		//----
+		wifiP2pManager!!.clearLocalServices(wifiP2pChannel, object : WifiP2pManager.ActionListener
+		{
+			override fun onFailure(reasonCode: Int)
+			{
+				Log.d(TAG, "clearLocalServices.removeLocalService() => onFailure($reasonCode)")
+			}
+
+			override fun onSuccess()
+			{
+				Log.d(TAG, "clearLocalServices.removeLocalService() => OnSuccess")
+
+				val wifiP2pServiceInfo : WifiP2pServiceInfo = WifiP2pDnsSdServiceInfo.newInstance(
+						Constants.DISCO_INSTANCE_NAME, Constants.DISCO_SERVICE_TYPE, mutableMapOf<String, String>()
+				)
+
+				wifiP2pManager!!.addLocalService(wifiP2pChannel, wifiP2pServiceInfo, object : WifiP2pManager.ActionListener
+				{
+					override fun onFailure(reasonCode: Int)
+					{
+						Log.d(TAG, "WifiP2pManager.addLocalService() => onFailure($reasonCode)")
+					}
+
+					override fun onSuccess()
+					{
+						Log.d(TAG, "WifiP2pManager.addLocalService() => OnSuccess")
+
+						discoverService()
+					}
+				})
+			}
+		})
+
+		discoHandler = Handler()
+		discoHandler?.postDelayed(discoRunnable, 5000)
 	}
 
 	override fun onDestroy()
@@ -130,6 +177,56 @@ class ChatService : Service()
 		unregisterReceiver(broadcastReceiver)
 	}
 
+
+	//----------------------------------------------------------------------------------------------
+	// Private Methods
+	//----------------------------------------------------------------------------------------------
+
+	private fun discoverService()
+	{
+		wifiP2pManager!!.clearServiceRequests(wifiP2pChannel, object : WifiP2pManager.ActionListener
+		{
+			override fun onFailure(reasonCode: Int)
+			{
+				Log.d(TAG, "WifiP2pManager.clearServiceRequests() => onFailure($reasonCode)")
+			}
+
+			override fun onSuccess()
+			{
+				Log.d(TAG, "WifiP2pManager.clearServiceRequests() => OnSuccess")
+
+				val wifiP2pServiceRequest : WifiP2pServiceRequest = WifiP2pDnsSdServiceRequest.newInstance(
+						Constants.DISCO_INSTANCE_NAME, Constants.DISCO_SERVICE_TYPE
+				)
+
+				wifiP2pManager!!.addServiceRequest(wifiP2pChannel, wifiP2pServiceRequest, object : WifiP2pManager.ActionListener
+				{
+					override fun onFailure(reasonCode: Int)
+					{
+						Log.d(TAG, "WifiP2pManager.addServiceRequest() => onFailure($reasonCode)")
+					}
+
+					override fun onSuccess()
+					{
+						Log.d(TAG, "WifiP2pManager.addServiceRequest() => OnSuccess")
+
+						wifiP2pManager!!.discoverServices(wifiP2pChannel, object : WifiP2pManager.ActionListener
+						{
+							override fun onSuccess()
+							{
+								Log.d(TAG, "WifiP2pManager.discoverServices() => OnSuccess")
+							}
+
+							override fun onFailure(reasonCode: Int)
+							{
+								Log.d(TAG, "WifiP2pManager.discoverServices() => onFailure($reasonCode)")
+							}
+						})
+					}
+				})
+			}
+		})
+	}
 
 	//----------------------------------------------------------------------------------------------
 	// API Methods
@@ -715,23 +812,24 @@ class ChatService : Service()
 
 		if(wifiP2pDiscoveryState == WifiP2pManager.WIFI_P2P_DISCOVERY_STOPPED)
 		{
-			Thread({
-				Log.d(TAG, "Wi-Fi p2p discovery has stopped, so we start the next discovery in 5 seconds.")
-				Thread.sleep(5000)
-
-				wifiP2pManager!!.discoverPeers(wifiP2pChannel, object : WifiP2pManager.ActionListener
-				{
-					override fun onSuccess()
-					{
-						Log.d(TAG, "WifiP2pManager.discoverPeers() => OnSuccess")
-					}
-
-					override fun onFailure(reasonCode: Int)
-					{
-						Log.d(TAG, "WifiP2pManager.discoverPeers() => onFailure($reasonCode)")
-					}
-				})
-			}).start()
+			Log.d(TAG, "Wi-Fi p2p discovery has stopped.")
+//			Thread({
+//				Log.d(TAG, "Wi-Fi p2p discovery has stopped, so we start the next discovery in 5 seconds.")
+//				Thread.sleep(5000)
+//
+//				wifiP2pManager!!.discoverPeers(wifiP2pChannel, object : WifiP2pManager.ActionListener
+//				{
+//					override fun onSuccess()
+//					{
+//						Log.d(TAG, "WifiP2pManager.discoverPeers() => OnSuccess")
+//					}
+//
+//					override fun onFailure(reasonCode: Int)
+//					{
+//						Log.d(TAG, "WifiP2pManager.discoverPeers() => onFailure($reasonCode)")
+//					}
+//				})
+//			}).start()
 		}
 	}
 
@@ -743,40 +841,41 @@ class ChatService : Service()
 	{
 		for(device in wifiP2pDeviceList.deviceList)
 		{
-			Thread({
-				val currentThread = Thread.currentThread()
-
-				if(device.status == WifiP2pDevice.CONNECTED)
-				{
-					Log.d(TAG, "(${currentThread.id}) Already connected to device: ${device.deviceName}.")
-					return@Thread
-				}
-
-				if(device.deviceName.startsWith("[TV] Samsung 5 Series", true))
-				{
-					Log.d(TAG, "(${currentThread.id}) We do not want to connect to a TV device: ${device.deviceName}.")
-					return@Thread
-				}
-
-				Log.d(TAG, "(${currentThread.id}) Try to connect to device: ${device.deviceName}.")
-
-				val wifiP2pConfig: WifiP2pConfig = WifiP2pConfig()
-				wifiP2pConfig.deviceAddress = device.deviceAddress
-				wifiP2pConfig.wps.setup = WpsInfo.PBC;
-
-				wifiP2pManager?.connect(wifiP2pChannel, wifiP2pConfig, object : WifiP2pManager.ActionListener
-				{
-					override fun onSuccess()
-					{
-						Log.d(TAG, "(${currentThread.id}) WifiP2pManager.connect -> onSuccess().")
-					}
-
-					override fun onFailure(reason: Int)
-					{
-						Log.d(TAG, "(${currentThread.id}) WifiP2pManager.connect -> onFailure(${reason}.")
-					}
-				})
-			}).start()
+			Log.d(TAG, "wifiP2pPeersChanged: ${device}.")
+//			Thread({
+//				val currentThread = Thread.currentThread()
+//
+//				if(device.status == WifiP2pDevice.CONNECTED)
+//				{
+//					Log.d(TAG, "(${currentThread.id}) Already connected to device: ${device.deviceName}.")
+//					return@Thread
+//				}
+//
+//				if(device.deviceName.startsWith("[TV] Samsung 5 Series", true))
+//				{
+//					Log.d(TAG, "(${currentThread.id}) We do not want to connect to a TV device: ${device.deviceName}.")
+//					return@Thread
+//				}
+//
+//				Log.d(TAG, "(${currentThread.id}) Try to connect to device: ${device.deviceName}.")
+//
+//				val wifiP2pConfig: WifiP2pConfig = WifiP2pConfig()
+//				wifiP2pConfig.deviceAddress = device.deviceAddress
+//				wifiP2pConfig.wps.setup = WpsInfo.PBC;
+//
+//				wifiP2pManager?.connect(wifiP2pChannel, wifiP2pConfig, object : WifiP2pManager.ActionListener
+//				{
+//					override fun onSuccess()
+//					{
+//						Log.d(TAG, "(${currentThread.id}) WifiP2pManager.connect -> onSuccess().")
+//					}
+//
+//					override fun onFailure(reason: Int)
+//					{
+//						Log.d(TAG, "(${currentThread.id}) WifiP2pManager.connect -> onFailure(${reason}.")
+//					}
+//				})
+//			}).start()
 		}
 	}
 
@@ -833,6 +932,38 @@ class ChatService : Service()
 				ipExchangeClientThread !!.start()
 			}
 		}
+	}
+
+	public fun wifiP2pServiceAvailable(device : WifiP2pDevice)
+	{
+		Thread({
+			val currentThread = Thread.currentThread()
+
+			if(device.status == WifiP2pDevice.CONNECTED)
+			{
+				Log.d(TAG, "(${currentThread.id}) Already connected to device: ${device.deviceName}.")
+				return@Thread
+			}
+
+			Log.d(TAG, "(${currentThread.id}) Try to connect to device: ${device.deviceName}.")
+
+			val wifiP2pConfig: WifiP2pConfig = WifiP2pConfig()
+			wifiP2pConfig.deviceAddress = device.deviceAddress
+			wifiP2pConfig.wps.setup = WpsInfo.PBC;
+
+			wifiP2pManager?.connect(wifiP2pChannel, wifiP2pConfig, object : WifiP2pManager.ActionListener
+			{
+				override fun onSuccess()
+				{
+					Log.d(TAG, "(${currentThread.id}) WifiP2pManager.connect -> onSuccess().")
+				}
+
+				override fun onFailure(reason: Int)
+				{
+					Log.d(TAG, "(${currentThread.id}) WifiP2pManager.connect -> onFailure(${reason}).")
+				}
+			})
+		}).start()
 	}
 
 
@@ -897,4 +1028,6 @@ class ChatService : Service()
 
         }
 	}
+
+
 }

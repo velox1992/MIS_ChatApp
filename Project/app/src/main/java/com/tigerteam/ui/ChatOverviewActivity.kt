@@ -93,6 +93,8 @@ class ChatOverviewActivity : AppCompatActivity()
 		setContentView(R.layout.activity_chat_overview)
 		setSupportActionBar(toolbar)
 
+		//----
+		Log.d(TAG, "onCreate()")
 
 
 
@@ -139,11 +141,17 @@ class ChatOverviewActivity : AppCompatActivity()
 	override fun onStart()
 	{
 		super.onStart()
+
+		//----
+		Log.d(TAG, "onStart()")
 	}
 
 	override fun onResume()
 	{
 		super.onResume()
+
+		//----
+		Log.d(TAG, "onResume()")
 
 		// Chats aktualisieren
 		if(isChatServiceBound) {
@@ -153,6 +161,9 @@ class ChatOverviewActivity : AppCompatActivity()
 
 	override fun onDestroy()
 	{
+		//----
+		Log.d(TAG, "onDestroy()")
+
 		unbindService(chatServiceConnection)
 		super.onDestroy()
 	}

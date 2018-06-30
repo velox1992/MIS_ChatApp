@@ -41,5 +41,9 @@ class Constants
 		const val SYNC_SERVER_SOCKET_PORT = 7734
 		const val SYNC_SERVER_SOCKET_TIMEOUT = 5000
 		const val SYNC_CLIENT_SOCKET_TIMEOUT = 5000
+
+		// Service Discovery
+		const val DISCO_INSTANCE_NAME : String = "com.tigerteam.msichat"
+		const val DISCO_SERVICE_TYPE : String = "com.tigerteam.msichat._tcp"
 	}
 }
