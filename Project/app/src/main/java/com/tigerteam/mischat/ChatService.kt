@@ -2,8 +2,10 @@ package com.tigerteam.mischat
 
 import android.Manifest
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
@@ -12,6 +14,7 @@ import com.tigerteam.database.*
 import com.tigerteam.database.DbObjects.*
 import com.tigerteam.ui.Objects.CreateChatContact
 import android.content.pm.PackageManager
+import android.net.wifi.p2p.WifiP2pManager
 import android.support.v4.app.ActivityCompat
 import android.telephony.TelephonyManager
 import com.tigerteam.ui.Objects.Contact
@@ -50,6 +53,10 @@ class ChatService : Service()
 	private var syncClient : Thread? = null
 
 	private var peerList : MutableList<InetAddress> = mutableListOf<InetAddress>()
+	private var wifiP2pManager : WifiP2pManager? = null
+	private var wifiP2pChannel : WifiP2pManager.Channel? = null
+	private var intentFilter : IntentFilter? = null
+	private var broadcastReceiver : WifiP2pBroadcastReceiver? = null
 
 
 	//----------------------------------------------------------------------------------------------
@@ -75,11 +82,46 @@ class ChatService : Service()
 
 		syncClient = Thread(com.tigerteam.sync.Client(this))
 		syncClient!!.start()
+
+		//----
+		wifiP2pManager = getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
+		wifiP2pChannel = wifiP2pManager!!.initialize(this, getMainLooper(), null)
+
+		//----
+		broadcastReceiver = WifiP2pBroadcastReceiver(wifiP2pManager!!, wifiP2pChannel!!, this)
+
+		//----
+		intentFilter = IntentFilter()
+		intentFilter!!.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION)
+		intentFilter!!.addAction(WifiP2pManager.WIFI_P2P_DISCOVERY_CHANGED_ACTION)
+		intentFilter!!.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION)
+		intentFilter!!.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION)
+		intentFilter!!.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION)
+
+		//----
+		registerReceiver(broadcastReceiver, intentFilter)
+
+		//----
+		wifiP2pManager!!.discoverPeers(wifiP2pChannel, object : WifiP2pManager.ActionListener
+		{
+            override fun onSuccess()
+            {
+                Log.d(TAG, "WifiP2pManager.discoverPeers() => OnSuccess")
+            }
+
+            override fun onFailure(reasonCode: Int)
+            {
+	            Log.d(TAG, "WifiP2pManager.discoverPeers() => onFailure($reasonCode)")
+            }
+        })
 	}
 
 	override fun onDestroy()
 	{
 		Log.i(TAG, "ChatService onDestroy")
+
+		//----
+		unregisterReceiver(broadcastReceiver)
 	}
 
 
@@ -201,7 +243,7 @@ class ChatService : Service()
 	public fun getContactsForCreatingChat() : List<CreateChatContact>{
 
 		var tmp = mutableListOf<CreateChatContact>()
-		val onlyKnownContacts = true // true bei Test, false bei echt
+		val onlyKnownContacts = false // true bei Test, false bei echt
 
 		try {
 			if(onlyKnownContacts) {
@@ -625,6 +667,52 @@ class ChatService : Service()
 		{
 			LocalBroadcastManager.getInstance(this).sendBroadcast(UpdateUIIntent());
 		}
+	}
+
+
+	var ownInetAddress : InetAddress? = null
+	var inetAddresses = mutableSetOf<InetAddress>()
+
+	//
+	// IPExchangeClient adds his ip and the ip's of the other clients
+	//
+	public fun setPeerAddresses(inetAddresses : List<InetAddress>, ownInetAddress: InetAddress)
+	{
+		this.ownInetAddress = ownInetAddress
+		this.inetAddresses.clear()
+		this.inetAddresses.addAll(inetAddresses)
+	}
+
+	//
+	// IPExchangeServer adds a new client ip.
+	//
+	public fun addPeerAddress(inetAddress: InetAddress)
+	{
+		this.inetAddresses.add(inetAddress)
+	}
+
+	//
+	// Returns the peerAddresses
+	//
+	public fun getPeerAddresses(filterOwnAddress : Boolean) : List<InetAddress>
+	{
+		var peerAddresses = mutableListOf<InetAddress>()
+		for(inetAddress in this.inetAddresses)
+		{
+			if(filterOwnAddress && (inetAddress == this.ownInetAddress))
+				continue
+
+			peerAddresses.add(inetAddress)
+		}
+		return peerAddresses
+	}
+
+	//
+	// If the sync client cannot connect to the address, remove it.
+	//
+	public fun removePeerAddress(inetAddress: InetAddress)
+	{
+		this.inetAddresses.remove(inetAddress)
 	}
 
 

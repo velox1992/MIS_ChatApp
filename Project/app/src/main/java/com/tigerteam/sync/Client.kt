@@ -5,6 +5,7 @@ import com.tigerteam.mischat.ChatService
 import com.tigerteam.mischat.Constants
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
+import java.net.ConnectException
 import java.net.InetAddress
 import java.net.Socket
 import java.util.*
@@ -40,18 +41,19 @@ class Client(val chatService : ChatService) : Runnable
 	{
 		while(true)
 		{
+			var address : InetAddress? = null
 			try
 			{
 				if(peerQueue.isEmpty())
 				{
-					peerQueue = chatService.getPeers()
+					peerQueue.addAll(chatService.getPeerAddresses(true))
 					if(peerQueue.isEmpty())
 					{
 						Thread.sleep(randomTime(500, 1500).toLong())
 						continue
 					}
 				}
-				var address = peerQueue.poll()
+				address = peerQueue.poll()
 
 				Log.d(TAG, "Creating Socket (${address.hostName}, ${address.hostAddress})")
 				socket = Socket(address, Constants.SYNC_SERVER_SOCKET_PORT)
@@ -66,6 +68,12 @@ class Client(val chatService : ChatService) : Runnable
 				oosRequest!!.writeObject(DataRequest(DataRequestType.Quit))
 				Thread.sleep(500)
 			}
+			catch(e : ConnectException)
+			{
+				Log.e(TAG, "${e.toString()} : ${e.message}")
+				if(address != null)
+					chatService.removePeerAddress(address)
+			}
 			catch(e: Exception)
 			{
 				Log.e(TAG, "Client.run() => ${e.toString()} : ${e.message}")
@@ -73,16 +81,15 @@ class Client(val chatService : ChatService) : Runnable
 			}
 			finally
 			{
-				oisResponse?.close()
 				oisResponse = null
-
-				oosRequest?.close()
 				oosRequest = null
 
 				Log.d(TAG, "Closing Socket.")
 				socket?.close()
 				socket = null
 			}
+
+			Thread.sleep(2500)
 		}
 	}
 

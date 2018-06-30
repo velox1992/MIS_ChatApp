@@ -25,10 +25,15 @@
             android:name="com.tigerteam.ui.FirstUseActivity"
             android:label="@string/title_activity_first_use" />
 
+        <!--
+        Stop service when app is closed
+        https://stackoverflow.com/questions/29323317/stop-service-when-app-is-closed
+        -->
         <service
             android:name=".ChatService"
             android:enabled="true"
-            android:exported="false" />
+            android:exported="false"
+            android:stopWithTask="true"/>
 
         <activity
             android:name="com.tigerteam.ui.CreateChatActivity"
