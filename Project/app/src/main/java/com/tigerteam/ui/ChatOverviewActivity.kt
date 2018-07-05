@@ -274,7 +274,7 @@ class ChatOverviewActivity : AppCompatActivity()
 			startCreateChatActivity()
 		}
 
-		chatService!!.fillSomeTestData()
+		//chatService!!.fillSomeTestData()
 
 		showMyChats()
 	}
