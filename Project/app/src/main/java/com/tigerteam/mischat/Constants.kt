@@ -45,5 +45,6 @@ class Constants
 		// Service Discovery
 		const val DISCO_INSTANCE_NAME : String = "com.tigerteam.msichat"
 		const val DISCO_SERVICE_TYPE : String = "com.tigerteam.msichat._tcp"
+		const val DISCO_TIMESPAN : Long = 10000
 	}
 }

@@ -3,6 +3,7 @@ package com.tigerteam.ui
 import android.Manifest
 import android.content.*
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Bundle
 import android.os.IBinder
 import android.support.v4.app.ActivityCompat
@@ -138,6 +139,8 @@ class ChatOverviewActivity : AppCompatActivity()
 
 		//----
 		intentFilter.addAction(UpdateUIIntent().action)
+
+		this.setTheme()
 	}
 
 	override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

@@ -50,7 +50,10 @@ class WifiP2pBroadcastReceiver(var chatService: ChatService)
 	{
 		Log.d(TAG, "onDnsSdServiceAvailable() => instanceName=${instanceName}")
 		Log.d(TAG, "onDnsSdServiceAvailable() => registrationType=${registrationType}")
-		Log.d(TAG, "onDnsSdServiceAvailable() => srcDevice=${srcDevice})")
+		Log.d(TAG, "onDnsSdServiceAvailable() => srcDevice=${srcDevice?.deviceName})")
+
+		if(srcDevice != null)
+			chatService.wifiP2pServiceAvailable(srcDevice)
 	}
 
 	//
@@ -61,7 +64,7 @@ class WifiP2pBroadcastReceiver(var chatService: ChatService)
 	{
 		Log.d(TAG, "onDnsSdTxtRecordAvailable() => fullDomainName=${fullDomainName}")
 		Log.d(TAG, "onDnsSdTxtRecordAvailable() => txtRecordMap=${txtRecordMap}")
-		Log.d(TAG, "onDnsSdTxtRecordAvailable() => srcDevice=${srcDevice}")
+		Log.d(TAG, "onDnsSdTxtRecordAvailable() => srcDevice=${srcDevice?.deviceName}")
 
 		if(srcDevice != null)
 			chatService.wifiP2pServiceAvailable(srcDevice)
@@ -74,7 +77,10 @@ class WifiP2pBroadcastReceiver(var chatService: ChatService)
 	{
 		Log.d(TAG, "onServiceAvailable() => protocolType=${protocolType}")
 		Log.d(TAG, "onServiceAvailable() => responseData=${responseData}")
-		Log.d(TAG, "onServiceAvailable() => srcDevice=${srcDevice}")
+		Log.d(TAG, "onServiceAvailable() => srcDevice=${srcDevice?.deviceName}")
+
+		if(srcDevice != null)
+			chatService.wifiP2pServiceAvailable(srcDevice)
 	}
 
 
@@ -143,7 +149,22 @@ class WifiP2pBroadcastReceiver(var chatService: ChatService)
 	{
 		var wifiP2pDeviceList : WifiP2pDeviceList? = null
 		wifiP2pDeviceList = intent!!.getParcelableExtra<WifiP2pDeviceList>(WifiP2pManager.EXTRA_P2P_DEVICE_LIST)
-		Log.d(TAG, "WIFI_P2P_PEERS_CHANGED_ACTION: wifiP2pDeviceList=${wifiP2pDeviceList}")
+
+		if(wifiP2pDeviceList == null)
+		{
+			Log.d(TAG, "WIFI_P2P_PEERS_CHANGED_ACTION: wifiP2pDeviceList=<empty>")
+		}
+		else
+		{
+			if(wifiP2pDeviceList.deviceList.isEmpty())
+			{
+				Log.d(TAG, "WIFI_P2P_PEERS_CHANGED_ACTION: wifiP2pDeviceList=<empty>")
+			}
+		}
+		for(wifiP2pDevice in wifiP2pDeviceList?.deviceList as Iterable<WifiP2pDevice>)
+		{
+			Log.d(TAG, "WIFI_P2P_PEERS_CHANGED_ACTION: wifiP2pDeviceList=${wifiP2pDevice.deviceName}")
+		}
 
 		chatService.wifiP2pPeersChanged(wifiP2pDeviceList)
 	}
@@ -174,6 +195,6 @@ class WifiP2pBroadcastReceiver(var chatService: ChatService)
 		var thisDevice : WifiP2pDevice ? = null
 
 		thisDevice = intent!!.getParcelableExtra<WifiP2pDevice>(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE)
-		Log.d(TAG, "WIFI_P2P_THIS_DEVICE_CHANGED_ACTION: thisDevice=$thisDevice")
+		Log.d(TAG, "WIFI_P2P_THIS_DEVICE_CHANGED_ACTION: thisDevice=${thisDevice?.deviceName}")
 	}
 }

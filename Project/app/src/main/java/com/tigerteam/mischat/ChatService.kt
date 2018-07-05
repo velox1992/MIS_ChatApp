@@ -16,10 +16,8 @@ import android.content.pm.PackageManager
 import android.net.NetworkInfo
 import android.net.wifi.WpsInfo
 import android.net.wifi.p2p.*
-import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo
-import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest
-import android.net.wifi.p2p.nsd.WifiP2pServiceInfo
-import android.net.wifi.p2p.nsd.WifiP2pServiceRequest
+import android.net.wifi.p2p.nsd.*
+import android.os.Build
 import android.os.Handler
 import android.support.v4.app.ActivityCompat
 import android.telephony.TelephonyManager
@@ -83,7 +81,7 @@ class ChatService : Service()
 			}
 			finally
 			{
-				discoHandler?.postDelayed(this, 5000)
+				discoHandler?.postDelayed(this, Constants.DISCO_TIMESPAN)
 			}
 		}
 	}
@@ -150,6 +148,11 @@ class ChatService : Service()
 				val wifiP2pServiceInfo : WifiP2pServiceInfo = WifiP2pDnsSdServiceInfo.newInstance(
 						Constants.DISCO_INSTANCE_NAME, Constants.DISCO_SERVICE_TYPE, mutableMapOf<String, String>()
 				)
+//				val wifiP2pServiceInfo : WifiP2pUpnpServiceInfo = WifiP2pUpnpServiceInfo.newInstance(
+//						UUID.randomUUID().toString(),
+//						"urn:schemas-upnp-org:device:${Build.MODEL}:1",
+//						mutableListOf("urn:schemas-upnp-org:service:msichat:1")
+//				)
 
 				wifiP2pManager!!.addLocalService(wifiP2pChannel, wifiP2pServiceInfo, object : WifiP2pManager.ActionListener
 				{
@@ -172,8 +175,8 @@ class ChatService : Service()
 		// https://stackoverflow.com/questions/6242268/repeat-a-task-with-a-time-delay/6242292#6242292
 		// https://developer.android.com/reference/android/os/Handler
 		//----
-		discoHandler = Handler()
-		discoHandler?.postDelayed(discoRunnable, 5000)
+		//discoHandler = Handler()
+		//discoHandler?.postDelayed(discoRunnable, Constants.DISCO_TIMESPAN)
 	}
 
 	override fun onDestroy()
@@ -205,6 +208,9 @@ class ChatService : Service()
 				val wifiP2pServiceRequest : WifiP2pServiceRequest = WifiP2pDnsSdServiceRequest.newInstance(
 						Constants.DISCO_INSTANCE_NAME, Constants.DISCO_SERVICE_TYPE
 				)
+//				val wifiP2pServiceRequest : WifiP2pServiceRequest = WifiP2pUpnpServiceRequest.newInstance(
+//						"urn:schemas-upnp-org:service:msichat:1"
+//				)
 
 				wifiP2pManager!!.addServiceRequest(wifiP2pChannel, wifiP2pServiceRequest, object : WifiP2pManager.ActionListener
 				{
@@ -820,6 +826,7 @@ class ChatService : Service()
 		if(wifiP2pDiscoveryState == WifiP2pManager.WIFI_P2P_DISCOVERY_STOPPED)
 		{
 			Log.d(TAG, "Wi-Fi p2p discovery has stopped.")
+			discoverService()
 //			Thread({
 //				Log.d(TAG, "Wi-Fi p2p discovery has stopped, so we start the next discovery in 5 seconds.")
 //				Thread.sleep(5000)
@@ -848,7 +855,7 @@ class ChatService : Service()
 	{
 		for(device in wifiP2pDeviceList.deviceList)
 		{
-			Log.d(TAG, "wifiP2pPeersChanged: ${device}.")
+			Log.d(TAG, "wifiP2pPeersChanged: ${device.deviceName}.")
 //			Thread({
 //				val currentThread = Thread.currentThread()
 //
