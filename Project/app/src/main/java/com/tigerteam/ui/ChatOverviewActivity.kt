@@ -139,8 +139,6 @@ class ChatOverviewActivity : AppCompatActivity()
 
 		//----
 		intentFilter.addAction(UpdateUIIntent().action)
-
-		this.setTheme()
 	}
 
 	override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
